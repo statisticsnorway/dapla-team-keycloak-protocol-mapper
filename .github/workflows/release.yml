@@ -10,8 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app_id: ${{ secrets.DAPLA_BOT_APP_ID }}
+          private_key: ${{ secrets.DAPLA_BOT_PRIVATE_KEY }}
+
       - uses: actions/checkout@v3
         with:
+          token: ${{ steps.app-token.outputs.token }}
           ref: refs/heads/main
 
       - name: Set up JDK 17
@@ -30,13 +37,13 @@ jobs:
 
       - name: Configure Git user
         run: |
-          git config user.email "ghactions@ssb.no"
-          git config user.name "GitHub Actions"
+          git config user.name "dapla-bot[bot]"
+          git config user.email "143391972+dapla-bot[bot]@users.noreply.github.com"
 
       - name: Perform release and publish jar
         id: release_jar
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           mvn --batch-mode -DskipTests release:prepare
           TAG=$(git describe --abbrev=0 --tags)
@@ -56,14 +63,14 @@ jobs:
         uses: release-drafter/release-drafter@v5
         id: create_github_release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         with:
           tag: ${{ steps.release_jar.outputs.tag }}
 
       - name: Upload assets to GitHub release
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         with:
           asset_path: ${{ steps.release_jar.outputs.artifact_path }}
           asset_name: ${{ steps.release_jar.outputs.artifact_id }}.jar
@@ -73,6 +80,6 @@ jobs:
       - name: Publish GitHub release
         uses: eregon/publish-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         with:
           release_id: ${{ steps.create_github_release.outputs.id }}
