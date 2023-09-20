@@ -45,6 +45,6 @@ class TeamsMapperTest {
         assertThat(claim).isNotNull();
         assertThat(claim).isInstanceOf(String.class);
         assertThat((String) claim).isEqualTo("""
-                ["demo-enhjoern-æ","demo-enhjoern-ø"]""");
+                ["demo-enhjoern-a","demo-enhjoern-b"]""");
     }
 }
