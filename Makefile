@@ -5,9 +5,6 @@ default: | help
 build: ## Build the project and install to your local maven repo
 	mvn clean install
 
-.PHONY: build-skiptests ## Build the project (skipping tests)
-	mvn clean install -Dmaven.test.skip=true
-
 .PHONY: test
 test: ## Run tests
 	mvn clean test
