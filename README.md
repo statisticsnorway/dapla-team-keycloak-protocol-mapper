@@ -54,6 +54,13 @@ resource "keycloak_generic_protocol_mapper" "dapla_teams_mapper" {
 }
 ```
 
+## Versioning scheme
+
+To ensure clarity and intuitiveness regarding this library's compatibility with Keycloak versions,
+its major version mirrors that of Keycloak's major version. While the library *might* work with later
+Keycloak versions, such compatibility hasn't been verified.
+
+
 ## Development
 
 Use `make` to execute common tasks:
