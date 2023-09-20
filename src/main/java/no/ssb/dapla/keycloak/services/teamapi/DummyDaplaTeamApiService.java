@@ -15,17 +15,17 @@ public class DummyDaplaTeamApiService implements DaplaTeamApiService {
     @Override
     public List<String> getTeams() {
         return List.of(
-                "demo-enhjoern-æ",
-                "demo-enhjoern-ø"
+                "demo-enhjoern-a",
+                "demo-enhjoern-b"
         );
     }
 
     @Override
     public List<String> getGroups() {
         return List.of(
-                "demo-enhjoern-æ-data-admins",
-                "demo-enhjoern-æ-developers",
-                "demo-enhjoern-ø-developers"
+                "demo-enhjoern-a-data-admins",
+                "demo-enhjoern-a-developers",
+                "demo-enhjoern-b-developers"
         );
     }
 }
