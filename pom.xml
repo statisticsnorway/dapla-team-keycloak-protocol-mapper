@@ -3,7 +3,7 @@
 
     <groupId>no.ssb.dapla.keycloak</groupId>
     <artifactId>dapla-team-keycloak-protocol-mapper</artifactId>
-    <version>24.0.1-SNAPSHOT</version>
+    <version>24.0.4-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Dapla Team Protocol Mapper for Keycloak</name>
@@ -15,15 +15,15 @@
         <github.repository>statisticsnorway/dapla-team-keycloak-protocol-mapper</github.repository>
 
         <!-- Dependencies -->
-        <assertj.version>3.24.2</assertj.version>
-        <auto-service.version>1.0.1</auto-service.version>
-        <commons-codec.version>1.15</commons-codec.version>
-        <keycloak.version>24.0.3</keycloak.version>
-        <okhttp.version>5.0.0-alpha.11</okhttp.version>
-        <mockito.version>5.4.0</mockito.version>
-        <moshi.version>1.15.0</moshi.version>
-        <junit.version>5.9.2</junit.version>
-        <snakeyaml.version>2.0</snakeyaml.version>
+        <assertj.version>3.25.3</assertj.version>
+        <auto-service.version>1.1.1</auto-service.version>
+        <commons-codec.version>1.17.0</commons-codec.version>
+        <keycloak.version>24.0.4</keycloak.version>
+        <okhttp.version>5.0.0-alpha.14</okhttp.version>
+        <mockito.version>5.12.0</mockito.version>
+        <moshi.version>1.15.1</moshi.version>
+        <junit.version>5.10.2</junit.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
 
         <!-- Plugins -->
         <inject-maven-plugin.version>1.3</inject-maven-plugin.version>
