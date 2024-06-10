@@ -18,7 +18,7 @@
         <assertj.version>3.25.3</assertj.version>
         <auto-service.version>1.1.1</auto-service.version>
         <commons-codec.version>1.17.0</commons-codec.version>
-        <keycloak.version>24.0.4</keycloak.version>
+        <keycloak.version>24.0.5</keycloak.version>
         <okhttp.version>5.0.0-alpha.14</okhttp.version>
         <mockito.version>5.12.0</mockito.version>
         <moshi.version>1.15.1</moshi.version>
