@@ -1,11 +1,9 @@
 package no.ssb.dapla.keycloak.services.teamapi;
 
-import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public interface DaplaTeamApiService {
 
-    List<String> getTeams();
-
-    List<String> getGroups();
+    JsonNode getDaplaUserInfo(String userPrincipalName);
 
 }

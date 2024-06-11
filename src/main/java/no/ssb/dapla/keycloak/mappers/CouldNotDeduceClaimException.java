@@ -6,8 +6,4 @@ public class CouldNotDeduceClaimException extends RuntimeException {
         super(message);
     }
 
-    public CouldNotDeduceClaimException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
 }

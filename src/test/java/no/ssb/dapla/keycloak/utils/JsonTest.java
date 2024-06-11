@@ -37,7 +37,6 @@ public class JsonTest {
     void testFrom() {
         Map<String, String> map = new HashMap<>();
         map.put("key", "value");
-
         String json = Json.from(map);
 
         assertThat(json)
@@ -49,7 +48,6 @@ public class JsonTest {
     void testPrettyFromWithObject() {
         Map<String, String> map = new HashMap<>();
         map.put("key", "value");
-
         String prettyJson = Json.prettyFrom(map);
 
         assertThat(prettyJson)
@@ -60,7 +58,6 @@ public class JsonTest {
     @Test
     void testPrettyFromWithString() {
         String json = "{\"key\":\"value\"}";
-
         String prettyJson = Json.prettyFrom(json);
 
         assertThat(prettyJson)

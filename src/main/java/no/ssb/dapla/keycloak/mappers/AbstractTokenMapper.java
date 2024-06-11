@@ -1,5 +1,6 @@
 package no.ssb.dapla.keycloak.mappers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.CaseFormat;
 import no.ssb.dapla.keycloak.BuildInfo;
 import no.ssb.dapla.keycloak.utils.Converter;
@@ -16,6 +17,7 @@ import org.keycloak.representations.IDToken;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public abstract class AbstractTokenMapper extends AbstractOIDCProtocolMapper
         implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
@@ -154,8 +156,20 @@ public abstract class AbstractTokenMapper extends AbstractOIDCProtocolMapper
         return Converter.convert(mappingModel.getConfig().get(configKey), type);
     }
 
+    protected <T> T getConfig(ProtocolMapperModel mappingModel, String configKey, TypeReference<T> type) {
+        return Converter.convert(mappingModel.getConfig().get(configKey), type);
+    }
+
     protected String getConfigString(ProtocolMapperModel mappingModel, String configKey) {
         return getConfig(mappingModel, configKey, String.class);
+    }
+
+    protected List<String> getConfigStringList(ProtocolMapperModel mappingModel, String configKey) {
+        return getConfig(mappingModel, configKey, new TypeReference<>() {});
+    }
+
+    protected Set<String> getConfigStringSet(ProtocolMapperModel mappingModel, String configKey) {
+        return getConfig(mappingModel, configKey, new TypeReference<>() {});
     }
 
     protected Boolean getConfigBoolean(ProtocolMapperModel mappingModel, String configKey) {

@@ -1,8 +1,8 @@
 package no.ssb.dapla.keycloak.services.teamapi;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import no.ssb.dapla.keycloak.utils.Json;
 import org.jboss.logging.Logger;
-
-import java.util.List;
 
 public class DummyDaplaTeamApiService implements DaplaTeamApiService {
     private static final Logger log = Logger.getLogger(DummyDaplaTeamApiService.class);
@@ -13,19 +13,19 @@ public class DummyDaplaTeamApiService implements DaplaTeamApiService {
     }
 
     @Override
-    public List<String> getTeams() {
-        return List.of(
-                "demo-enhjoern-a",
-                "demo-enhjoern-b"
-        );
-    }
-
-    @Override
-    public List<String> getGroups() {
-        return List.of(
-                "demo-enhjoern-a-data-admins",
-                "demo-enhjoern-a-developers",
-                "demo-enhjoern-b-developers"
-        );
+    public JsonNode getDaplaUserInfo(String userPrincipalName) {
+        return Json.toJsonNode("""
+                {
+                  "teams": [
+                    {
+                      "uniform_name": "play-foeniks-a",
+                      "section_code": "724",
+                      "groups": [
+                        "developers"
+                      ]
+                    }
+                  ]
+                }
+                """);
     }
 }
