@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.models.*;
 import org.keycloak.representations.IDToken;
 import org.mockito.Mockito;
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import java.util.Map;
 
@@ -25,11 +27,6 @@ class DaplaUserInfoMapperTest {
     @BeforeEach
     void setUp() {
         protocolMapperModel = new ProtocolMapperModel();
-        protocolMapperModel.setConfig(Map.of(
-                ConfigPropertyKey.VERBOSE_LOGGING, Boolean.TRUE.toString(),
-                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyDaplaTeamApiService.NAME
-        ));
-
         userSessionModel = Mockito.mock(UserSessionModel.class);
         userModel = Mockito.mock(UserModel.class);
         Mockito.when(userSessionModel.getUser()).thenReturn(userModel);
@@ -42,10 +39,30 @@ class DaplaUserInfoMapperTest {
 
     @Test
     void testMapToClaimUsingDummyDaplaTeamApiService() throws Exception {
+        protocolMapperModel.setConfig(Map.of(
+                ConfigPropertyKey.VERBOSE_LOGGING, Boolean.TRUE.toString(),
+                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyDaplaTeamApiService.NAME,
+                DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS, Boolean.TRUE.toString()
+        ));
+
         Object claim = mapper.mapToClaim(idToken, protocolMapperModel, userSessionModel, keycloakSession, clientSessionContext);
         assertThat(claim).isNotNull();
         assertThat(claim).isInstanceOf(String.class);
-        System.out.println(claim);
-        assertThat(claim).isEqualTo("{\"teams\":[{\"uniform_name\":\"play-foeniks-a\",\"section_code\":\"724\",\"groups\":[\"developers\"]}]}");
+        String jsonClaim = (String) claim;
+        JSONAssert.assertEquals("""
+                {
+                  "teams" : [ {
+                    "uniform_name" : "dapla-felles",
+                    "groups" : [ ]
+                  }, {
+                    "uniform_name" : "mus-ost",
+                    "groups" : [ "developers" ]
+                  }, {
+                    "uniform_name" : "play-foeniks-a",
+                    "groups" : [ "developers", "data-admins", "consumers", "editors" ]
+                  } ]
+                }
+                """, jsonClaim, JSONCompareMode.LENIENT);
     }
+
 }

@@ -14,10 +14,7 @@ import org.keycloak.protocol.oidc.mappers.*;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public abstract class AbstractTokenMapper extends AbstractOIDCProtocolMapper
         implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
@@ -116,7 +113,6 @@ public abstract class AbstractTokenMapper extends AbstractOIDCProtocolMapper
         String claimName = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
         debugLog(verbose, "Map claim " + claimName);
         debugLog(verbose, "Token: " + Json.prettyFrom(token));
-        //debugLog(verbose, "User session: " + Json.prettyFrom(userSession));
 
         try {
             Object claimValue = mapToClaim(token, mappingModel, userSession, keycloakSession, clientSessionCtx);
@@ -165,11 +161,17 @@ public abstract class AbstractTokenMapper extends AbstractOIDCProtocolMapper
     }
 
     protected List<String> getConfigStringList(ProtocolMapperModel mappingModel, String configKey) {
-        return getConfig(mappingModel, configKey, new TypeReference<>() {});
+        String value = getConfigString(mappingModel, configKey);
+        return (value == null || value.isBlank())
+                ? Collections.emptyList()
+                : Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
     }
 
     protected Set<String> getConfigStringSet(ProtocolMapperModel mappingModel, String configKey) {
-        return getConfig(mappingModel, configKey, new TypeReference<>() {});
+        return new LinkedHashSet<>(getConfigStringList(mappingModel, configKey));
     }
 
     protected Boolean getConfigBoolean(ProtocolMapperModel mappingModel, String configKey) {

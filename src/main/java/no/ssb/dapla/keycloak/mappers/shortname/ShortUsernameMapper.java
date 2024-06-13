@@ -12,9 +12,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.representations.IDToken;
 
-import java.util.Arrays;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @AutoService(ProtocolMapper.class)
 public class ShortUsernameMapper extends AbstractTokenMapper {
@@ -100,14 +98,7 @@ public class ShortUsernameMapper extends AbstractTokenMapper {
     }
 
     Set<String> domainsNotUsedAsPrefix(final ProtocolMapperModel mappingModel) {
-        String config = getConfigString(mappingModel, ConfigPropertyKey.DOMAINS_NOT_USED_AS_PREFIX);
-
-        return (config == null || config.isBlank())
-                ? Set.of()
-                : Arrays.stream(config.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
+        return getConfigStringSet(mappingModel, ConfigPropertyKey.DOMAINS_NOT_USED_AS_PREFIX);
     }
 
     private static String asRfc1123(String s) {
