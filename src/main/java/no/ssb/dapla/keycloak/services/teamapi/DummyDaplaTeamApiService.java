@@ -40,6 +40,22 @@ public class DummyDaplaTeamApiService implements DaplaTeamApiService {
                         "dpia_links": []
                       },
                       {
+                        "uniform_name": "mu",
+                        "display_name": "Team Mu",
+                        "division_name": "Musestatistikk (Avdeling 300)",
+                        "section_name": "Nærings- og miljøstatistikk (399)",
+                        "section_code": "399",
+                        "autonomy_level": "MANAGED"
+                      },
+                      {
+                        "uniform_name": "mus",
+                        "display_name": "Team Mus",
+                        "division_name": "Musestatistikk (Avdeling 300)",
+                        "section_name": "Nærings- og miljøstatistikk (399)",
+                        "section_code": "399",
+                        "autonomy_level": "SEMI_MANAGED"
+                      },
+                      {
                         "uniform_name": "mus-ost",
                         "display_name": "Team Ost",
                         "division_name": "Musestatistikk (Avdeling 300)",
@@ -47,7 +63,7 @@ public class DummyDaplaTeamApiService implements DaplaTeamApiService {
                         "section_code": "399",
                         "autonomy_level": "SELF_MANAGED",
                         "source_data_classification": ["PII","CONSENT_BASED"],
-                        "statistical_products": ["eiendom_kostra"],
+                        "statistical_products": ["ost_myk"],
                         "dpia_links": ["https://ssb.no/pii-agreement-1"]
                       },
                       {
@@ -64,7 +80,19 @@ public class DummyDaplaTeamApiService implements DaplaTeamApiService {
                     ],
                     "groups": [
                       {
+                        "uniform_name": "mu-developers"
+                      },
+                      {
+                        "uniform_name": "mus-developers"
+                      },
+                      {
+                        "uniform_name": "mus-data-admins"
+                      },
+                      {
                         "uniform_name": "mus-ost-developers"
+                      },
+                      {
+                        "uniform_name": "mus-ost-tech-admins"
                       },
                       {
                         "uniform_name": "play-foeniks-a-developers"

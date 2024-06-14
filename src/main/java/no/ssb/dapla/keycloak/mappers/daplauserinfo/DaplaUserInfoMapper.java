@@ -24,6 +24,7 @@ import org.keycloak.representations.IDToken;
 import java.net.URI;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static no.ssb.dapla.keycloak.Env.Var.TEST_USER_PRINCIPAL_NAME;
 import static no.ssb.dapla.keycloak.Env.env;
@@ -37,6 +38,7 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
         public static final String API_IMPL = "dapla.team-api-impl";
         public static final String NESTED_TEAMS = "dapla.userinfo.nested";
         public static final String GROUP_SUFFIX_INCLUDE_REGEX = "dapla.userinfo.group-suffix-include-regex";
+        public static final String EXCLUDE_TEAMS_WITHOUT_GROUPS = "dapla.userinfo.exclude-teams-without-groups";
         public static final String DAPLA_USER_PROPS = "dapla.userinfo.user-props";
         public static final String DAPLA_TEAM_PROPS = "dapla.userinfo.team-props";
     }
@@ -84,6 +86,17 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                                 If not specified, all groups are included.
                                 """)
                         .type(ConfigPropertyType.STRING)
+                        .build(),
+
+                configProperty()
+                        .name(ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS)
+                        .label("Exclude teams without groups")
+                        .helpText("""
+                                If false, all teams are included regardless of group membership.
+                                If true, only teams where the user is member of a relevant group are included. This works together with the 'Group Suffix Include Regex' setting.
+                                """)
+                        .type(ConfigPropertyType.BOOLEAN)
+                        .defaultValue(true)
                         .build(),
 
                 configProperty()
@@ -170,21 +183,18 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
      * @param model The ProtocolMapperModel
      * @return The claim as a JSON string
      */
-    public String createClaim(String daplaUserInfoJson, ProtocolMapperModel model) {
+    String createClaim(String daplaUserInfoJson, ProtocolMapperModel model) {
         Map<String, Object> claim = new HashMap<>();
-
-        Optional<Pattern> groupIncludeFilter = Optional.ofNullable(getConfigString(model, ConfigPropertyKey.GROUP_SUFFIX_INCLUDE_REGEX))
-                .map(suffixRegex -> Pattern.compile(".*-(" + suffixRegex + ")"));
-
-        List<String> groups = Jq.queryOne("[._embedded.groups[].uniform_name]", daplaUserInfoJson, new TypeReference<List<String>>() {})
-            .orElse(Collections.emptyList())
-            .stream()
-            // If a filter is specified, only keep groups with suffixes matching the regex:
-            .filter(group -> groupIncludeFilter.map(regex -> regex.matcher(group).matches()).orElse(true))
-            .toList();
 
         List<ObjectNode> teams = Jq.queryOne("[._embedded.teams[]]", daplaUserInfoJson, new TypeReference<List<ObjectNode>>() {})
                 .orElse(Collections.emptyList());
+
+        Set<String> groups = Jq.queryOne("[._embedded.groups[].uniform_name]", daplaUserInfoJson, new TypeReference<Set<String>>() {})
+                .orElse(Collections.emptySet()).stream()
+                // If a filter is specified, only keep groups with suffixes matching the regex:
+                // Note that this is only an intermediate filtering, since the regex will include disallowed suffixes if we have team names that share a prefix
+                .filter(group -> groupIncludeFilter(model).map(regex -> regex.matcher(group).matches()).orElse(true))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // Retain only configured team properties
         Set<String> teamProps = getConfigStringSet(model, ConfigPropertyKey.DAPLA_TEAM_PROPS);
@@ -205,10 +215,14 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                         .ifPresent(value -> claim.put(userProp, value));
             }
 
-        if (getConfigBoolean(model, ConfigPropertyKey.NESTED_TEAMS)) {
-            claim.put("teams", nestGroupsIntoTeams(teams, groups));
+        boolean nestTeams = getConfigBoolean(model, ConfigPropertyKey.NESTED_TEAMS);
+        boolean excludeTeamsWithoutGroups = getConfigBoolean(model, ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS);
+
+        List<ObjectNode> nestedTeams = nestGroupsIntoTeams(teams, groups, excludeTeamsWithoutGroups);
+        if (nestTeams) {
+            claim.put("teams", nestedTeams);
         } else {
-            claim.put("teams", teams.stream().map(team -> team.get("uniform_name").asText()).toList());
+            claim.put("teams", nestedTeams.stream().map(team -> team.get("uniform_name").asText()).toList());
             claim.put("groups", groups);
         }
 
@@ -220,20 +234,34 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
      * In addition to other team properties, as configured.
      *
      * @param teams team objects
-     * @param groups group uniform names
+     * @param groupNames group uniform names
      * @return List of team objects with nested groups
      */
-    private List<ObjectNode> nestGroupsIntoTeams(List<ObjectNode> teams, List<String> groups) {
+    List<ObjectNode> nestGroupsIntoTeams(List<ObjectNode> teams, Collection<String> groupNames, boolean excludeTeamsWithoutGroups) {
+        Set<String> allTeamNames = teams.stream()
+                .map(team -> team.get("uniform_name").asText())
+                .collect(Collectors.toSet());
+        Set<String> allowedSuffixes = GroupSuffixFilter.allowedSuffixes(allTeamNames, groupNames);
+
         return teams.stream()
                 .map(team -> {
                     String teamUniformName = team.get("uniform_name").asText();
                     ArrayNode teamGroupsArrayNode = team.putArray("groups");
-                    groups.stream()
+                    groupNames.stream()
                             .filter(group -> group.startsWith(teamUniformName))
                             .map(group -> group.substring(teamUniformName.length() + 1))
-                            .forEach(suffix -> teamGroupsArrayNode.add(suffix));
+                            .filter(allowedSuffixes::contains)
+                            .forEach(teamGroupsArrayNode::add);
                     return team;
-                }).toList();
+                })
+                .filter(team -> !excludeTeamsWithoutGroups || !team.get("groups").isEmpty())
+                .toList();
     }
 
+    Optional<Pattern> groupIncludeFilter(ProtocolMapperModel model) {
+        // TODO: Validate somehow that the regex is valid?
+        // If the user does not provide a valid regex, filtering is likely to fail spectacularly.
+        return Optional.ofNullable(getConfigString(model, ConfigPropertyKey.GROUP_SUFFIX_INCLUDE_REGEX))
+                .map(suffixRegex -> Pattern.compile(".*-(" + suffixRegex + ")"));
+    }
 }
