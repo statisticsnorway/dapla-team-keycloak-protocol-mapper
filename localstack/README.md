@@ -5,6 +5,7 @@ Start a local Keycloak instance using Docker Compose:
 ```shell
 docker-compose up --force-recreate
 ```
+Note that you will need a local `.env` file in your localstack directory. See [.env-example](.env-example) for inspiration.
 
 Inspect your local Keycloak container:
 
