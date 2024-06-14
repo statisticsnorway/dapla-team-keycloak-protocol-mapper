@@ -1,10 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>no.ssb.dapla.keycloak</groupId>
     <artifactId>dapla-team-keycloak-protocol-mapper</artifactId>
-    <version>24.0.5-SNAPSHOT</version>
+    <version>24.0.5</version>
     <packaging>jar</packaging>
 
     <name>Dapla Team Protocol Mapper for Keycloak</name>
@@ -250,7 +249,7 @@
     <scm>
         <developerConnection>scm:git:https://github.com/${github.repository}.git</developerConnection>
         <url>https://github.com/${github.repository}</url>
-        <tag>HEAD</tag>
+        <tag>v24.0.5</tag>
     </scm>
     <repositories>
         <repository>
