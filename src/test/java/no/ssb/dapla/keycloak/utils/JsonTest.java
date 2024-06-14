@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,13 +16,28 @@ public class JsonTest {
     @Test
     void testToObjectWithTypeReference() {
         String json = "{\"key\":\"value\"}";
-        TypeReference<HashMap<String, String>> type = new TypeReference<HashMap<String, String>>() {};
+        TypeReference<HashMap<String, String>> type = new TypeReference<>() {};
         Map<String, String> result = Json.toObject(type, json);
 
         assertThat(result)
                 .isNotNull()
                 .containsEntry("key", "value");
     }
+
+    @Test
+    void testToListWithTypeReference() {
+        String json = """
+                ["one", "two", "three"]
+                """;
+        TypeReference<List<String>> type = new TypeReference<>() {};
+        List<String> result = Json.toObject(type, json);
+
+        assertThat(result)
+                .isNotNull()
+                .hasSize(3)
+                .contains("one", "two", "three");
+    }
+
 
     @Test
     void testToObjectWithTypeReferenceIOException() {
@@ -37,7 +53,6 @@ public class JsonTest {
     void testFrom() {
         Map<String, String> map = new HashMap<>();
         map.put("key", "value");
-
         String json = Json.from(map);
 
         assertThat(json)
@@ -49,7 +64,6 @@ public class JsonTest {
     void testPrettyFromWithObject() {
         Map<String, String> map = new HashMap<>();
         map.put("key", "value");
-
         String prettyJson = Json.prettyFrom(map);
 
         assertThat(prettyJson)
@@ -60,7 +74,6 @@ public class JsonTest {
     @Test
     void testPrettyFromWithString() {
         String json = "{\"key\":\"value\"}";
-
         String prettyJson = Json.prettyFrom(json);
 
         assertThat(prettyJson)

@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: bitnami/postgresql:16.3.0
+    container_name: postgres
+    environment:
+      - POSTGRESQL_USERNAME=keycloak
+      - POSTGRESQL_PASSWORD=keycloak
+      - POSTGRESQL_DATABASE=keycloak_db
+    volumes:
+      - postgres_data:/bitnami/postgresql
+    networks:
+      - keycloak_network
+
+  keycloak:
+    image: bitnami/keycloak:24.0.5
+    container_name: keycloak
+    environment:
+      - KEYCLOAK_DATABASE_HOST=postgres
+      - KEYCLOAK_DATABASE_PORT=5432
+      - KEYCLOAK_DATABASE_NAME=keycloak_db
+      - KEYCLOAK_DATABASE_USER=keycloak
+      - KEYCLOAK_DATABASE_PASSWORD=keycloak
+      - KEYCLOAK_ADMIN_USER=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
+      - KEYCLOAK_LOG_LEVEL=INFO
+      - KEYCLOAK_CACHE_TYPE=local
+      - KEYCLOAK_EXTRA_ARGS=--spi-custom-provider-enabled=true
+      - DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_AUTH_URL=${DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_AUTH_URL}
+      - DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_ID=${DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_ID}
+      - DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_SECRET=${DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_SECRET}
+      - TEST_USER_PRINCIPAL_NAME=${TEST_USER_PRINCIPAL_NAME}
+
+    ports:
+      - "18080:8080"
+    depends_on:
+      - postgres
+    volumes:
+      #- keycloak_data:/bitnami/keycloak
+      - ./custom-providers:/tmp/custom-providers:ro
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - keycloak_network
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  keycloak_network:
+    driver: bridge

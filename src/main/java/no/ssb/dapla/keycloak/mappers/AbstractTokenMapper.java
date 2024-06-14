@@ -1,5 +1,6 @@
 package no.ssb.dapla.keycloak.mappers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.CaseFormat;
 import no.ssb.dapla.keycloak.BuildInfo;
 import no.ssb.dapla.keycloak.utils.Converter;
@@ -13,9 +14,7 @@ import org.keycloak.protocol.oidc.mappers.*;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public abstract class AbstractTokenMapper extends AbstractOIDCProtocolMapper
         implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
@@ -114,7 +113,6 @@ public abstract class AbstractTokenMapper extends AbstractOIDCProtocolMapper
         String claimName = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
         debugLog(verbose, "Map claim " + claimName);
         debugLog(verbose, "Token: " + Json.prettyFrom(token));
-        //debugLog(verbose, "User session: " + Json.prettyFrom(userSession));
 
         try {
             Object claimValue = mapToClaim(token, mappingModel, userSession, keycloakSession, clientSessionCtx);
@@ -154,8 +152,26 @@ public abstract class AbstractTokenMapper extends AbstractOIDCProtocolMapper
         return Converter.convert(mappingModel.getConfig().get(configKey), type);
     }
 
+    protected <T> T getConfig(ProtocolMapperModel mappingModel, String configKey, TypeReference<T> type) {
+        return Converter.convert(mappingModel.getConfig().get(configKey), type);
+    }
+
     protected String getConfigString(ProtocolMapperModel mappingModel, String configKey) {
         return getConfig(mappingModel, configKey, String.class);
+    }
+
+    protected List<String> getConfigStringList(ProtocolMapperModel mappingModel, String configKey) {
+        String value = getConfigString(mappingModel, configKey);
+        return (value == null || value.isBlank())
+                ? Collections.emptyList()
+                : Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    protected Set<String> getConfigStringSet(ProtocolMapperModel mappingModel, String configKey) {
+        return new LinkedHashSet<>(getConfigStringList(mappingModel, configKey));
     }
 
     protected Boolean getConfigBoolean(ProtocolMapperModel mappingModel, String configKey) {
