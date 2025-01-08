@@ -14,7 +14,7 @@ services:
       - keycloak_network
 
   keycloak:
-    image: bitnami/keycloak:24.0.5
+    image: bitnami/keycloak:26.0.7
     container_name: keycloak
     environment:
       - KEYCLOAK_DATABASE_HOST=postgres
