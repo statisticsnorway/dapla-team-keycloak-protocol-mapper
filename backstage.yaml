@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: dapla-team-keycloak-protocol-mapper
-  title: Dapla Team API
+  title: Dapla Team Keycloak Protocol Mapper
   description: |
     Keycloak protocol mappers for Dapla team info.
   tags:
