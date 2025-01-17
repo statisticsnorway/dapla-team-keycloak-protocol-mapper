@@ -59,7 +59,7 @@ resource "keycloak_generic_protocol_mapper" "dapla_userinfo_mapper" {
     "access.token.claim"                          = true
     "userinfo.token.claim"                        = true
     "dapla-team-api.impl"                         = "Default"
-    "dapla-team-api.url"                          = "https://dapla-team-api-v2.prod-bip-app.ssb.no"
+    "dapla-team-api.url"                          = "http://dapla-team-api.dapla-platform"
     "dapla.userinfo.nested"                       = false
     "dapla.userinfo.group-suffix-include-regex"   = "developers|data-admins"
     "dapla.userinfo.exclude-teams-without-groups" = true

@@ -20,7 +20,7 @@ class DefaultDaplaTeamApiServiceIT {
     @BeforeEach
     public void setup() {
         service = new DefaultDaplaTeamApiService(DefaultDaplaTeamApiService.Config.builder()
-                .teamApiUrl(URI.create("https://dapla-team-api-v2.prod-bip-app.ssb.no"))
+                .teamApiUrl(URI.create("http://dapla-team-api.dapla-platform"))
                 .build());
     }
 
