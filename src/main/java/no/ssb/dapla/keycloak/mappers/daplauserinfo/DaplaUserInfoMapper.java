@@ -64,7 +64,7 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                                 Root URL for the Dapla Team API.
                                 This is not relevant if 'Dapla Team API Impl' is Dummy.""")
                         .type(ConfigPropertyType.STRING)
-                        .defaultValue("https://dapla-team-api-v2.prod-bip-app.ssb.no")
+                        .defaultValue("http://dapla-team-api.dapla-platform")
                         .build(),
 
                 configProperty()

@@ -37,7 +37,7 @@ public class DaplaUseInfoMapperIT {
     @BeforeEach
     void setUp() {
         service = new DefaultDaplaTeamApiService(DefaultDaplaTeamApiService.Config.builder()
-                .teamApiUrl(URI.create("https://dapla-team-api-v2.prod-bip-app.ssb.no"))
+                .teamApiUrl(URI.create("http://dapla-team-api.dapla-platform"))
                 .build());
 
         protocolMapperModel = new ProtocolMapperModel();
@@ -74,7 +74,7 @@ public class DaplaUseInfoMapperIT {
     void testMapToClaimUsingDefaultDaplaTeamApiService() {
         protocolMapperModel.setConfig(Map.of(
                 ConfigPropertyKey.VERBOSE_LOGGING, Boolean.TRUE.toString(),
-                DaplaUserInfoMapper.ConfigPropertyKey.API_URL, "https://dapla-team-api-v2.prod-bip-app.ssb.no",
+                DaplaUserInfoMapper.ConfigPropertyKey.API_URL, "http://dapla-team-api.dapla-platform",
                 DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DefaultDaplaTeamApiService.NAME,
                 DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS, Boolean.TRUE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS, Boolean.FALSE.toString(),
