@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: dapla-team-keycloak-protocol-mapper
+  title: Dapla Team API
+  description: |
+    Keycloak protocol mappers for Dapla team info.
+  tags:
+    - java
+  annotations:
+    github.com/project-slug: statisticsnorway/dapla-team-keycloak-protocol-mapper
+spec:
+  type: service
+  owner: dapla-skyinfra-developers
+  lifecycle: production
+  system: dapla-team-api
+  partOf:
+    - keycloak
+  consumesApi:
+    - dapla-team-api
+
+
