@@ -14,8 +14,7 @@ spec:
   owner: dapla-skyinfra-developers
   lifecycle: production
   system: dapla-team-api
-  subcomponentOf:
-    - "component:keycloak"
+  subcomponentOf: "component:keycloak"
   consumesApi:
     - dapla-team-api
 
