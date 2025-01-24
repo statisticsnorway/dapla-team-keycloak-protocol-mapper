@@ -13,7 +13,7 @@ spec:
   type: service
   owner: dapla-skyinfra-developers
   lifecycle: production
-  system: dapla-team-api
+  system: keycloak
   subcomponentOf: "component:keycloak"
   consumesApi:
     - dapla-team-api
