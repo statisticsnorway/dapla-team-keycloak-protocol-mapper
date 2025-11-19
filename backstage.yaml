@@ -15,7 +15,7 @@ spec:
   lifecycle: production
   system: keycloak
   subcomponentOf: "component:keycloak"
-  consumesApi:
+  consumesApis:
     - dapla-team-api
 
 
