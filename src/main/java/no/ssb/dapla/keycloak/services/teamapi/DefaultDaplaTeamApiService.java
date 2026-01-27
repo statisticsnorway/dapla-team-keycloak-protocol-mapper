@@ -19,6 +19,11 @@ import java.net.URI;
 import static no.ssb.dapla.keycloak.Env.Var.*;
 import static no.ssb.dapla.keycloak.Env.requiredEnv;
 
+/**
+ * Implementation that works against <a href=
+ * "https://github.com/statisticsnorway/dapla-team-api">dapla-team-api</a>
+ * ('old' rest API).
+ */
 @RequiredArgsConstructor
 public class DefaultDaplaTeamApiService implements DaplaTeamApiService {
 
@@ -62,16 +67,7 @@ public class DefaultDaplaTeamApiService implements DaplaTeamApiService {
                 .header("Authorization", "Bearer " + authToken)
                 .build();
 
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Failed to fetch Dapla team user info for %s. Error: %s".formatted(userPrincipalName, response));
-            }
-            String jsonResponse = response.body().string();
-            log.debug("Response body: " + jsonResponse);
-            return Json.toJsonNode(jsonResponse);
-        } catch (Exception e) {
-            throw new DaplaKeycloakException("Error fetching Dapla userinfo for " + userPrincipalName, e);
-        }
+        return DaplaTeamApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
     }
 /*
     public JsonNode getDaplaUserInfo2(String userPrincipalName) {
