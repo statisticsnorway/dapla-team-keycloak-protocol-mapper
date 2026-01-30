@@ -49,7 +49,8 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                         .label("Dapla Team API Impl")
                         .helpText("""
                                 The API implementation.
-                                Default: Online Dapla Team API
+                                Default: Online Dapla Team API (old, REST)
+                                Dapla-api: Online Dapla API (new, graphql)
                                 Dummy: Offline, dummy replacement instead of a real API invocation.""")
                         .type(ConfigPropertyType.LIST)
                         .options(DaplaTeamApiService.NAME, DummyDaplaTeamApiService.NAME)
@@ -60,7 +61,7 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                         .name(ConfigPropertyKey.API_URL)
                         .label("Dapla Team API URL")
                         .helpText("""
-                                Root URL for the Dapla Team API.
+                                Root URL for the API.
                                 This is not relevant if 'Dapla Team API Impl' is Dummy.""")
                         .type(ConfigPropertyType.STRING)
                         .defaultValue("http://dapla-team-api.dapla-platform")
