@@ -28,7 +28,7 @@ class GroupSuffixFilterTest {
                 "play-foeniks-a-editors"
         );
 
-        Set<String> allowedSuffixes = GroupSuffixFilter.allowedSuffixes(teams, groups);
+        Set<String> allowedSuffixes = GroupCategory.allowedSuffixes(teams, groups);
         assertThat(allowedSuffixes).containsExactlyInAnyOrder(
                 "developers", "tech-admins", "data-admins", "consumers", "editors"
         );

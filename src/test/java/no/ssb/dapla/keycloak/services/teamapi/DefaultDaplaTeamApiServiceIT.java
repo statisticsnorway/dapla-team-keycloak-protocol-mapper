@@ -1,6 +1,6 @@
 package no.ssb.dapla.keycloak.services.teamapi;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -20,7 +20,7 @@ class DefaultDaplaTeamApiServiceIT {
     @BeforeEach
     public void setup() {
         service = new DefaultDaplaTeamApiService(DefaultDaplaTeamApiService.Config.builder()
-                .teamApiUrl(URI.create("http://dapla-team-api.dapla-platform"))
+                .teamApiUrl(URI.create("https://dapla-team-api.intern.test.ssb.no"))
                 .build());
     }
 
@@ -41,7 +41,7 @@ class DefaultDaplaTeamApiServiceIT {
     @Test
     public void testGetDaplaUserInfo() {
         String userPrincipalName = requiredEnv(TEST_USER_PRINCIPAL_NAME);
-        JsonNode daplaInfoJson = service.getDaplaUserInfo(userPrincipalName);
+        DaplaUserInfo daplaInfoJson = service.getDaplaUserInfo(userPrincipalName, null);
         System.out.println(Json.prettyFrom(daplaInfoJson));
     }
 

@@ -1,9 +1,16 @@
 package no.ssb.dapla.keycloak.services.teamapi;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import no.ssb.dapla.keycloak.utils.Json;
+import no.ssb.dapla.keycloak.services.model.DaplaGroup;
+import no.ssb.dapla.keycloak.services.model.DaplaTeam;
+import no.ssb.dapla.keycloak.services.model.DaplaUser;
+import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
 import org.jboss.logging.Logger;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
 public class DummyDaplaTeamApiService implements DaplaTeamApiService {
@@ -11,106 +18,56 @@ public class DummyDaplaTeamApiService implements DaplaTeamApiService {
     public static final String NAME = "Dummy";
 
     @Override
-    public JsonNode getDaplaUserInfo(String userPrincipalName) {
-         return Json.toJsonNode("""
-                {
-                  "principal_name": "%s",
-                  "azure_ad_id": "12345678-9abc-def0-1234-56789abcdef0",
-                  "display_name": "Mus, Mikke",
-                  "first_name": "Mikke",
-                  "last_name": "Mus",
-                  "email": "Mikke.Mus@ssb.no",
-                  "phone": "99999999",
-                  "job_title": "Testbruker",
-                  "division_name": "300 Musestatistikk",
-                  "division_code": "300",
-                  "section_name": "399 Nærings- og miljøstatistikk",
-                  "section_code": "399",
-                  "_embedded": {
-                    "teams": [
-                      {
-                        "uniform_name": "dapla-felles",
-                        "display_name": "Dapla Felles",
-                        "division_name": "IT (Avdeling 700)",
-                        "section_name": "Dataplattform (724)",
-                        "section_code": "724",
-                        "autonomy_level": "SELF_MANAGED",
-                        "source_data_classification": [],
-                        "statistical_products": [],
-                        "dpia_links": []
-                      },
-                      {
-                        "uniform_name": "mu",
-                        "display_name": "Team Mu",
-                        "division_name": "Musestatistikk (Avdeling 300)",
-                        "section_name": "Nærings- og miljøstatistikk (399)",
-                        "section_code": "399",
-                        "autonomy_level": "MANAGED"
-                      },
-                      {
-                        "uniform_name": "mus",
-                        "display_name": "Team Mus",
-                        "division_name": "Musestatistikk (Avdeling 300)",
-                        "section_name": "Nærings- og miljøstatistikk (399)",
-                        "section_code": "399",
-                        "autonomy_level": "SEMI_MANAGED"
-                      },
-                      {
-                        "uniform_name": "mus-ost",
-                        "display_name": "Team Ost",
-                        "division_name": "Musestatistikk (Avdeling 300)",
-                        "section_name": "Nærings- og miljøstatistikk (399)",
-                        "section_code": "399",
-                        "autonomy_level": "SELF_MANAGED",
-                        "source_data_classification": ["PII","CONSENT_BASED"],
-                        "statistical_products": ["ost_myk"],
-                        "dpia_links": ["https://ssb.no/pii-agreement-1"]
-                      },
-                      {
-                        "uniform_name": "play-foeniks-a",
-                        "display_name": "Play Føniks A",
-                        "division_name": "IT (Avdeling 700)",
-                        "section_name": "Dataplattform (724)",
-                        "section_code": "724",
-                        "autonomy_level": "SELF_MANAGED",
-                        "source_data_classification": [],
-                        "statistical_products": [],
-                        "dpia_links": []
-                      }
-                    ],
-                    "groups": [
-                      {
-                        "uniform_name": "mu-developers"
-                      },
-                      {
-                        "uniform_name": "mus-developers"
-                      },
-                      {
-                        "uniform_name": "mus-data-admins"
-                      },
-                      {
-                        "uniform_name": "mus-ost-developers"
-                      },
-                      {
-                        "uniform_name": "mus-ost-tech-admins"
-                      },
-                      {
-                        "uniform_name": "play-foeniks-a-developers"
-                      },
-                      {
-                        "uniform_name": "play-foeniks-a-data-admins"
-                      },
-                      {
-                        "uniform_name": "play-foeniks-a-consumers"
-                      },
-                      {
-                        "uniform_name": "play-foeniks-a-editors"
-                      }
-                    ]
-                  }
-                }
-                """.formatted(userPrincipalName)
-         );
+    public DaplaUserInfo getDaplaUserInfo(String userPrincipalName, Pattern groupCategoriesToInclude) {
+        var user = new DaplaUser("Mus, Mikke", userPrincipalName, "399", "399 Nærings- og miljøstatistikk", false);
+
+        return new DaplaUserInfo(
+                user,
+                List.of(
+                        new DaplaTeam(
+                                "dapla-felles",
+                                "Dapla Felles",
+                                "724",
+                                "Dataplattform (724)",
+                                "MANAGED", withGroups(groupCategoriesToInclude)),
+                        new DaplaTeam("mu",
+                                "Team Mu",
+                                "399",
+                                "Nærings- og miljøstatistikk (399)",
+                                "MANAGED", withGroups(groupCategoriesToInclude,
+                                new DaplaGroup("mu-developers")
+                        )),
+                        new DaplaTeam("mus",
+                                "Team Mus",
+                                "399",
+                                "Nærings- og miljøstatistikk (399)",
+                                "MANAGED",
+                                withGroups(groupCategoriesToInclude,
+                                        new DaplaGroup("mus-developers"),
+                                        new DaplaGroup("mus-data-admins")
+                                )),
+                        new DaplaTeam("mus-ost",
+                                "Team Ost",
+                                "399",
+                                "Nærings- og miljøstatistikk (399)",
+                                "SELF_MANAGED", withGroups(groupCategoriesToInclude,
+                                new DaplaGroup("mus-ost-developers"),
+                                new DaplaGroup("mus-ost-developers-mysuffix")
+                        )),
+                        new DaplaTeam("play-foeniks-a",
+                                "Play Føniks A",
+                                "724",
+                                "Dataplattform (724)",
+                                "SELF_MANAGED", withGroups(groupCategoriesToInclude,
+                                new DaplaGroup("play-foeniks-a-developers"),
+                                new DaplaGroup("play-foeniks-a-data-admins")
+                        ))
+                )
+        );
+    }
+
+    private ArrayList<DaplaGroup> withGroups(Pattern groupCategoriesToInclude, DaplaGroup... groups) {
+        return new ArrayList<>(Arrays.stream(groups).filter(group -> groupCategoriesToInclude == null || groupCategoriesToInclude.matcher(group.name()).matches()).toList());
     }
 
 }

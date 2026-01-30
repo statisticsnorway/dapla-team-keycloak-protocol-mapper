@@ -5,7 +5,14 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class GroupSuffixFilter {
+public class GroupCategory {
+    public static final String MANAGERS = "managers"; // Will be removed after migration to new api
+    public static final String DEVELOPERS = "developers";
+    public static final String DATA_ADMINS = "data-admins";
+
+    public static final String ALLOWED_GROUP_CATEGORIES_PIPE_SEPARATED = MANAGERS + "|" + DEVELOPERS + "|" + DATA_ADMINS;
+
+
 
     /**
      * Get allowed suffixes for a list of teams and groups.

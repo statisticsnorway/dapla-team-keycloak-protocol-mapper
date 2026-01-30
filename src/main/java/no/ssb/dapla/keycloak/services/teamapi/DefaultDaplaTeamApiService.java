@@ -1,12 +1,16 @@
 package no.ssb.dapla.keycloak.services.teamapi;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import no.ssb.dapla.keycloak.DaplaKeycloakException;
+import no.ssb.dapla.keycloak.services.model.DaplaGroup;
+import no.ssb.dapla.keycloak.services.model.DaplaTeam;
+import no.ssb.dapla.keycloak.services.model.DaplaUser;
+import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
 import no.ssb.dapla.keycloak.utils.Jq;
-import no.ssb.dapla.keycloak.utils.Json;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -15,9 +19,13 @@ import org.jboss.logging.Logger;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static no.ssb.dapla.keycloak.Env.Var.*;
 import static no.ssb.dapla.keycloak.Env.requiredEnv;
+import static no.ssb.dapla.keycloak.mappers.daplauserinfo.GroupCategory.ALLOWED_GROUP_CATEGORIES_PIPE_SEPARATED;
 
 /**
  * Implementation that works against <a href=
@@ -58,7 +66,8 @@ public class DefaultDaplaTeamApiService implements DaplaTeamApiService {
     }
 
     @Override
-    public JsonNode getDaplaUserInfo(String userPrincipalName) {
+    public DaplaUserInfo getDaplaUserInfo(String userPrincipalName, Pattern groupCategoriesToInclude) {
+
         String authToken = getAuthToken();
         String url = config.getTeamApiUrl().resolve("/users/%s?embed=teams,groups&select=groups.uniform_name".formatted(userPrincipalName)).toString();
         Request request = new Request.Builder()
@@ -67,81 +76,62 @@ public class DefaultDaplaTeamApiService implements DaplaTeamApiService {
                 .header("Authorization", "Bearer " + authToken)
                 .build();
 
-        return DaplaTeamApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
-    }
-/*
-    public JsonNode getDaplaUserInfo2(String userPrincipalName) {
-        String authToken = getAuthToken();
-        String url = config.getTeamApiUrl().resolve("/users/%s?embed=teams,groups&select=groups.uniform_name".formatted(userPrincipalName)).toString();
-        Request request = new Request.Builder()
-                .url(url)
-                .get()
-                .header("Authorization", "Bearer " + authToken)
-                .build();
+        JsonNode userInfo = DaplaTeamApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
 
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Failed to fetch Dapla team user info for %s. Error: %s".formatted(userPrincipalName, response));
-            }
-            String jsonResponse = response.body().string();
-            log.debug("Response body: " + jsonResponse);
+        DaplaUser user = jsonNodeToDaplaUser(userInfo);
 
-            Map<String, Object> daplaInfo = new HashMap<>();
-            Optional<Pattern> groupIncludeFilter = Optional.ofNullable(config.getGroupSuffixIncludeRegex())
-                    .map(suffixRegex -> Pattern.compile(".*-(" + suffixRegex + ")"));
+        Map<String, DaplaTeam> teamNameToDaplaTeam = jsonNodeToDaplaTeamMap(userInfo);
 
-            List<String> groups = Jq.queryOne("[._embedded.groups[].uniform_name]", jsonResponse, new TypeReference<List<String>>() {
-                    })
-                    .orElse(Collections.emptyList())
-                    .stream()
-                    // If a filter is specified, only keep groups with suffixes matching the regex:
-                    .filter(group -> groupIncludeFilter.map(regex -> regex.matcher(group).matches()).orElse(true))
-                    .toList();
+        Set<String> groups = jsonNodeToGroupNames(userInfo);
+        nestGroupsIntoTeams(groups, teamNameToDaplaTeam, groupCategoriesToInclude);
 
-            List<ObjectNode> teams = Jq.queryOne("[._embedded.teams[]]", jsonResponse, new TypeReference<List<ObjectNode>>() {})
-                    .orElse(Collections.emptyList());
-
-            // Filter out unwanted team properties
-            teams.forEach(team -> {
-                Iterator<String> fields = team.fieldNames();
-                while (fields.hasNext()) {
-                    String field = fields.next();
-                    if (!"uniform_name".equals(field) && !config.getDaplaTeamProps().contains(field)) {
-                        fields.remove();
-                    }
-                }
-            });
-
-            for (String userProp : config.getDaplaUserProps()) {
-                Jq.queryOne(".%s".formatted(userProp), jsonResponse, String.class)
-                        .ifPresent(value -> daplaInfo.put(userProp, value));
-            }
-            if (config.isNestedTeams()) {
-                daplaInfo.put("teams", nestGroupsIntoTeams(teams, groups));
-            } else {
-                daplaInfo.put("teams", teams.stream().map(team -> team.get("uniform_name").asText()).toList());
-                daplaInfo.put("groups", groups);
-            }
-
-            return Json.toJsonNode(daplaInfo);
-        } catch (Exception e) {
-            throw new DaplaKeycloakException("Error fetching Dapla userinfo for " + userPrincipalName, e);
-        }
+        return new DaplaUserInfo(user, new ArrayList<>(teamNameToDaplaTeam.values()));
     }
 
-    private List<ObjectNode> nestGroupsIntoTeams(List<ObjectNode> teams, List<String> groups) {
-        return teams.stream()
-                .map(team -> {
-                    String teamUniformName = team.get("uniform_name").asText();
-                    ArrayNode teamGroupsArrayNode = team.putArray("groups");
-                    groups.stream()
-                            .filter(group -> group.startsWith(teamUniformName))
-                            .map(group -> group.substring(teamUniformName.length() + 1))
-                            .forEach(suffix -> teamGroupsArrayNode.add(suffix));
-                    return team;
-                }).toList();
+    private static DaplaUser jsonNodeToDaplaUser(JsonNode userInfo) {
+        return Jq.queryOne("{email: .principal_name, name: .display_name, section_name, section_code}", userInfo, new TypeReference<Map<String, String>>() {
+                })
+                .map(fields -> new DaplaUser(fields.get("email"), fields.get("email"), fields.get("section_code"), fields.get("section_name"), null))
+                .orElseThrow();
     }
-*/
+
+
+    private Map<String, DaplaTeam> jsonNodeToDaplaTeamMap(JsonNode userInfo) {
+        return Jq.queryOne("[._embedded.teams[]]", userInfo, new TypeReference<List<Map<String, String>>>() {
+                })
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(fields -> new DaplaTeam(
+                        fields.get("uniform_name"),
+                        fields.get("display_name"),
+                        fields.get("section_code"),
+                        fields.get("section_name"),
+                        fields.get("autonomy_level")
+                ))
+                .collect(Collectors.toMap(DaplaTeam::uniformName, team -> team));
+    }
+
+    private static void nestGroupsIntoTeams(Set<String> groupNames, Map<String, DaplaTeam> teams, Pattern groupCategoriesToInclude) {
+        groupNames.stream()
+                // If a filter is specified, only keep groups with suffixes matching the regex:
+                // Note that this is only an intermediate filtering, since the regex will include disallowed suffixes if we have team names that share a prefix
+                .filter(group -> Optional.ofNullable(groupCategoriesToInclude).map(regex -> regex.matcher(group).matches()).orElse(true))
+                .map(DaplaGroup::new)
+                .forEach((DaplaGroup group) -> {
+                    // New API allows suffix after group category, so we'll handle it here as well
+                    String teamName = group.name().split("-(" + ALLOWED_GROUP_CATEGORIES_PIPE_SEPARATED + ")(-.*)?")[0];
+
+                    Optional.ofNullable(teams.get(teamName))
+                            .orElseThrow()
+                            .groups().add(group);
+                });
+    }
+
+    private static Set<String> jsonNodeToGroupNames(JsonNode userInfo) {
+        return Jq.queryOne("[._embedded.groups[].uniform_name]", userInfo, new TypeReference<Set<String>>() {
+                })
+                .orElse(Collections.emptySet());
+    }
 
     @Value
     @Builder
