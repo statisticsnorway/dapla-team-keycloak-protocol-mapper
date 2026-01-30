@@ -7,7 +7,7 @@ import no.ssb.dapla.keycloak.mappers.ConfigPropertyType;
 import no.ssb.dapla.keycloak.services.model.DaplaGroup;
 import no.ssb.dapla.keycloak.services.model.DaplaTeam;
 import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
-import no.ssb.dapla.keycloak.services.teamapi.*;
+import no.ssb.dapla.keycloak.services.api.*;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -52,8 +52,8 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                                 Default: Online Dapla Team API
                                 Dummy: Offline, dummy replacement instead of a real API invocation.""")
                         .type(ConfigPropertyType.LIST)
-                        .options(DefaultDaplaTeamApiService.NAME, DummyDaplaTeamApiService.NAME)
-                        .defaultValue(DefaultDaplaTeamApiService.NAME)
+                        .options(DaplaTeamApiService.NAME, DummyDaplaTeamApiService.NAME)
+                        .defaultValue(DaplaTeamApiService.NAME)
                         .build(),
 
                 configProperty()
@@ -124,13 +124,13 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
 
     @Override
     protected String helpText() {
-        return "Adds a 'dapla' user info claim, with selected data retrieved from Dapla Team API";
+        return "Adds a 'dapla' user info claim, with selected data retrieved from Dapla Api or Dapla Team Api";
     }
 
     @Override
     protected Object mapToClaim(IDToken token, ProtocolMapperModel model, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
         debugLog(model, "Retrieve Dapla userinfo");
-        DaplaTeamApiService teamApiService = teamApiService(model);
+        DaplaApiService teamApiService = teamApiService(model);
 
         DaplaUserInfo daplaUserInfo = teamApiService.getDaplaUserInfo(userPrincipalName(userSession), groupIncludeFilter(model));
 
@@ -207,21 +207,20 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
     }
 
     /**
-     * Instantiate Dapla Team API service based on the configuration.
+     * Instantiate Dapla API service based on the configuration.
      *
-     * @param model
-     * @return
+     * @return the implementation to use based on the user option
      */
-    DaplaTeamApiService teamApiService(ProtocolMapperModel model) {
+    DaplaApiService teamApiService(ProtocolMapperModel model) {
         String apiImpl = getConfigString(model, ConfigPropertyKey.API_IMPL);
         debugLog(model, "Use " + apiImpl + " Dapla Team API implementation");
-        if (DefaultDaplaTeamApiService.NAME.equals(apiImpl)) {
-            return new DefaultDaplaTeamApiService(DefaultDaplaTeamApiService.Config.builder()
+        if (DaplaTeamApiService.NAME.equals(apiImpl)) {
+            return new DaplaTeamApiService(DaplaTeamApiService.Config.builder()
                     .teamApiUrl(URI.create(getConfigString(model, ConfigPropertyKey.API_URL)))
                     .build());
         }
-        if (DaplaApiService.NAME.equals(apiImpl)) {
-            return new DaplaApiService(DaplaApiService.Config.builder()
+        if (DaplaApiServiceImpl.NAME.equals(apiImpl)) {
+            return new DaplaApiServiceImpl(DaplaApiServiceImpl.Config.builder()
                     .apiUrl(getConfigString(model, ConfigPropertyKey.API_URL))
                     .build());
         } else if (DummyDaplaTeamApiService.NAME.equals(apiImpl)) {

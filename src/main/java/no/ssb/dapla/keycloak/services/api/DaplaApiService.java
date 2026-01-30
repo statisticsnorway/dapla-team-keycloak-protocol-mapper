@@ -1,4 +1,4 @@
-package no.ssb.dapla.keycloak.services.teamapi;
+package no.ssb.dapla.keycloak.services.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import no.ssb.dapla.keycloak.DaplaKeycloakException;
@@ -12,7 +12,7 @@ import org.jboss.logging.Logger;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-public interface DaplaTeamApiService {
+public interface DaplaApiService {
     /**
      * Retrieve dapla user info from Dapla Team API
      *

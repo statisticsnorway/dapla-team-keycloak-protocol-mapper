@@ -1,4 +1,4 @@
-package no.ssb.dapla.keycloak.services.teamapi;
+package no.ssb.dapla.keycloak.services.api;
 
 import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
 import no.ssb.dapla.keycloak.utils.Json;
@@ -15,11 +15,11 @@ import static no.ssb.dapla.keycloak.Env.requiredEnv;
 @Tag("integration")
 @Disabled
 class DefaultDaplaTeamApiServiceIT {
-    private DefaultDaplaTeamApiService service;
+    private DaplaTeamApiService service;
 
     @BeforeEach
     public void setup() {
-        service = new DefaultDaplaTeamApiService(DefaultDaplaTeamApiService.Config.builder()
+        service = new DaplaTeamApiService(DaplaTeamApiService.Config.builder()
                 .teamApiUrl(URI.create("https://dapla-team-api.intern.test.ssb.no"))
                 .build());
     }

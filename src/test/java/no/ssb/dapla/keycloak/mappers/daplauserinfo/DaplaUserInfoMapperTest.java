@@ -1,7 +1,7 @@
 package no.ssb.dapla.keycloak.mappers.daplauserinfo;
 
 import no.ssb.dapla.keycloak.mappers.ConfigPropertyKey;
-import no.ssb.dapla.keycloak.services.teamapi.DummyDaplaTeamApiService;
+import no.ssb.dapla.keycloak.services.api.DummyDaplaTeamApiService;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,4 +1,4 @@
-package no.ssb.dapla.keycloak.services.teamapi;
+package no.ssb.dapla.keycloak.services.api;
 
 import lombok.RequiredArgsConstructor;
 import no.ssb.dapla.keycloak.services.model.DaplaGroup;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
-public class DummyDaplaTeamApiService implements DaplaTeamApiService {
+public class DummyDaplaTeamApiService implements DaplaApiService {
     private static final Logger log = Logger.getLogger(DummyDaplaTeamApiService.class);
     public static final String NAME = "Dummy";
 

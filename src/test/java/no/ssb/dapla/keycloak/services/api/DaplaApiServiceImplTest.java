@@ -1,8 +1,6 @@
-package no.ssb.dapla.keycloak.services.teamapi;
+package no.ssb.dapla.keycloak.services.api;
 
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class DaplaApiServiceImplTest {
 

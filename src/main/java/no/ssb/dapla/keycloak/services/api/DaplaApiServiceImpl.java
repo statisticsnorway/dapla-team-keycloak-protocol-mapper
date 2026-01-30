@@ -1,4 +1,4 @@
-package no.ssb.dapla.keycloak.services.teamapi;
+package no.ssb.dapla.keycloak.services.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,10 +31,10 @@ import static no.ssb.dapla.keycloak.Env.requiredEnv;
  * (GraphQL):
  */
 @RequiredArgsConstructor
-public class DaplaApiService implements DaplaTeamApiService {
+public class DaplaApiServiceImpl implements DaplaApiService {
 
     public static final String NAME = "Dapla-api";
-    private static final Logger log = Logger.getLogger(DaplaApiService.class);
+    private static final Logger log = Logger.getLogger(DaplaApiServiceImpl.class);
     private final OkHttpClient httpClient = new OkHttpClient();
     private final Config config;
 
@@ -50,7 +50,7 @@ public class DaplaApiService implements DaplaTeamApiService {
                 .post(RequestBody.create(body, MediaType.get("application/json; charset=utf-8")))
                 .build();
 
-        JsonNode userInfo = DaplaTeamApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
+        JsonNode userInfo = DaplaApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
 
         DaplaUser user = Jq.queryOne(".data.user | { name, email, section_name: .section.name, section_code: .section.code, isSectionManager}", userInfo, new TypeReference<Map<String, String>>() {
                 }).map(fields -> new DaplaUser(

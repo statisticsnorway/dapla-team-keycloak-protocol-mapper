@@ -1,4 +1,4 @@
-package no.ssb.dapla.keycloak.services.teamapi;
+package no.ssb.dapla.keycloak.services.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,10 +33,10 @@ import static no.ssb.dapla.keycloak.mappers.daplauserinfo.GroupCategory.ALLOWED_
  * ('old' rest API).
  */
 @RequiredArgsConstructor
-public class DefaultDaplaTeamApiService implements DaplaTeamApiService {
+public class DaplaTeamApiService implements DaplaApiService {
 
     public static final String NAME = "Default";
-    private static final Logger log = Logger.getLogger(DefaultDaplaTeamApiService.class);
+    private static final Logger log = Logger.getLogger(DaplaTeamApiService.class);
     private final OkHttpClient httpClient = new OkHttpClient();
     private final Config config;
 
@@ -76,7 +76,7 @@ public class DefaultDaplaTeamApiService implements DaplaTeamApiService {
                 .header("Authorization", "Bearer " + authToken)
                 .build();
 
-        JsonNode userInfo = DaplaTeamApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
+        JsonNode userInfo = DaplaApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
 
         DaplaUser user = jsonNodeToDaplaUser(userInfo);
 
