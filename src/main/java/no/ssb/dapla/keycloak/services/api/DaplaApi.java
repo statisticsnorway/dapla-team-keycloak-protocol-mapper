@@ -31,10 +31,10 @@ import static no.ssb.dapla.keycloak.Env.requiredEnv;
  * (GraphQL):
  */
 @RequiredArgsConstructor
-public class DaplaApiServiceImpl implements DaplaApiService {
+public class DaplaApi implements ApiService {
 
     public static final String NAME = "Dapla-api";
-    private static final Logger log = Logger.getLogger(DaplaApiServiceImpl.class);
+    private static final Logger log = Logger.getLogger(DaplaApi.class);
     private final OkHttpClient httpClient = new OkHttpClient();
     private final Config config;
 
@@ -50,7 +50,7 @@ public class DaplaApiServiceImpl implements DaplaApiService {
                 .post(RequestBody.create(body, MediaType.get("application/json; charset=utf-8")))
                 .build();
 
-        JsonNode userInfo = DaplaApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
+        JsonNode userInfo = ApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
 
         DaplaUser user = Jq.queryOne(".data.user | { name, email, section_name: .section.name, section_code: .section.code, isSectionManager}", userInfo, new TypeReference<Map<String, String>>() {
                 }).map(fields -> new DaplaUser(

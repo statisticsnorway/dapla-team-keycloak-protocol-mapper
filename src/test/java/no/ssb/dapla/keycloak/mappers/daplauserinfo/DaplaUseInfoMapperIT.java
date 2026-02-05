@@ -1,14 +1,13 @@
 package no.ssb.dapla.keycloak.mappers.daplauserinfo;
 
 import no.ssb.dapla.keycloak.mappers.ConfigPropertyKey;
-import no.ssb.dapla.keycloak.services.api.DaplaApiServiceImpl;
-import no.ssb.dapla.keycloak.services.api.DaplaApiService;
+import no.ssb.dapla.keycloak.services.api.DaplaApi;
+import no.ssb.dapla.keycloak.services.api.ApiService;
 import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
-import no.ssb.dapla.keycloak.services.api.DaplaTeamApiService;
+import no.ssb.dapla.keycloak.services.api.DaplaTeamApi;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.models.*;
@@ -25,7 +24,7 @@ import static no.ssb.dapla.keycloak.Env.requiredEnv;
 @Disabled
 public class DaplaUseInfoMapperIT {
     private static final Logger log = Logger.getLogger(DaplaUserInfoMapperTest.class);
-    private DaplaApiService service;
+    private ApiService service;
 
     private ProtocolMapperModel protocolMapperModel;
     private UserSessionModel userSessionModel;
@@ -37,8 +36,8 @@ public class DaplaUseInfoMapperIT {
 
     @BeforeEach
     void setUp() {
-        service = new DaplaTeamApiService(DaplaTeamApiService.Config.builder()
-                .teamApiUrl(URI.create("http://dapla-team-api.dapla-platform"))
+        service = new DaplaTeamApi(DaplaTeamApi.Config.builder()
+                .teamApiUrl(URI.create("https://dapla-team-api.intern.test.ssb.no"))
                 .build());
 
         protocolMapperModel = new ProtocolMapperModel();
@@ -76,7 +75,7 @@ public class DaplaUseInfoMapperIT {
         protocolMapperModel.setConfig(Map.of(
                 ConfigPropertyKey.VERBOSE_LOGGING, Boolean.TRUE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.API_URL, "http://dapla-team-api.dapla-platform",
-                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DaplaTeamApiService.NAME,
+                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DaplaTeamApi.NAME,
                 DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS, Boolean.TRUE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS, Boolean.FALSE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.DAPLA_USER_PROPS, "division_code",
@@ -91,7 +90,7 @@ public class DaplaUseInfoMapperIT {
         protocolMapperModel.setConfig(Map.of(
                 ConfigPropertyKey.VERBOSE_LOGGING, Boolean.TRUE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.API_URL, "http://dapla-api.dapla-platform",
-                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DaplaApiServiceImpl.NAME,
+                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DaplaApi.NAME,
                 DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS, Boolean.TRUE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS, Boolean.FALSE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.DAPLA_USER_PROPS, "division_code",

@@ -33,10 +33,10 @@ import static no.ssb.dapla.keycloak.mappers.daplauserinfo.GroupCategory.ALLOWED_
  * ('old' rest API).
  */
 @RequiredArgsConstructor
-public class DaplaTeamApiService implements DaplaApiService {
+public class DaplaTeamApi implements ApiService {
 
     public static final String NAME = "Default";
-    private static final Logger log = Logger.getLogger(DaplaTeamApiService.class);
+    private static final Logger log = Logger.getLogger(DaplaTeamApi.class);
     private final OkHttpClient httpClient = new OkHttpClient();
     private final Config config;
 
@@ -76,7 +76,7 @@ public class DaplaTeamApiService implements DaplaApiService {
                 .header("Authorization", "Bearer " + authToken)
                 .build();
 
-        JsonNode userInfo = DaplaApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
+        JsonNode userInfo = ApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
 
         DaplaUser user = jsonNodeToDaplaUser(userInfo);
 
@@ -118,7 +118,7 @@ public class DaplaTeamApiService implements DaplaApiService {
                 .filter(group -> Optional.ofNullable(groupCategoriesToInclude).map(regex -> regex.matcher(group).matches()).orElse(true))
                 .map(DaplaGroup::new)
                 .forEach((DaplaGroup group) -> {
-                    // New API allows suffix after group category, so we'll handle it here as well
+                    // New API allows suffix after group category, so we will handle it here as well just in case the old api still is alive when this happen
                     String teamName = group.name().split("-(" + ALLOWED_GROUP_CATEGORIES_PIPE_SEPARATED + ")(-.*)?")[0];
 
                     Optional.ofNullable(teams.get(teamName))

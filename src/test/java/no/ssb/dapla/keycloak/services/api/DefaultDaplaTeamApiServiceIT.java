@@ -15,11 +15,11 @@ import static no.ssb.dapla.keycloak.Env.requiredEnv;
 @Tag("integration")
 @Disabled
 class DefaultDaplaTeamApiServiceIT {
-    private DaplaTeamApiService service;
+    private DaplaTeamApi service;
 
     @BeforeEach
     public void setup() {
-        service = new DaplaTeamApiService(DaplaTeamApiService.Config.builder()
+        service = new DaplaTeamApi(DaplaTeamApi.Config.builder()
                 .teamApiUrl(URI.create("https://dapla-team-api.intern.test.ssb.no"))
                 .build());
     }

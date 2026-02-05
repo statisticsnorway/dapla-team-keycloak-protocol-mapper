@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
-public class DummyDaplaTeamApiService implements DaplaApiService {
-    private static final Logger log = Logger.getLogger(DummyDaplaTeamApiService.class);
+public class DummyApi implements ApiService {
+    private static final Logger log = Logger.getLogger(DummyApi.class);
     public static final String NAME = "Dummy";
 
     @Override

@@ -12,13 +12,13 @@ import org.jboss.logging.Logger;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-public interface DaplaApiService {
+public interface ApiService {
     /**
-     * Retrieve dapla user info from Dapla Team API
+     * Retrieve dapla user info from an API
      *
      * @param userPrincipalName        the user principal name to retrieve info for
      * @param groupCategoriesToInclude which group categories that should be included in the result
-     * @return the user info as a JsonNode
+     * @return the user info as a POJO
      */
     DaplaUserInfo getDaplaUserInfo(String userPrincipalName, Pattern groupCategoriesToInclude);
 

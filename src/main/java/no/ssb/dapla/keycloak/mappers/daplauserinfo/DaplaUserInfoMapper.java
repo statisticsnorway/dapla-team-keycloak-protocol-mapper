@@ -53,8 +53,8 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                                 Dapla-api: Online Dapla API (new, graphql)
                                 Dummy: Offline, dummy replacement instead of a real API invocation.""")
                         .type(ConfigPropertyType.LIST)
-                        .options(DaplaTeamApiService.NAME, DummyDaplaTeamApiService.NAME)
-                        .defaultValue(DaplaTeamApiService.NAME)
+                        .options(DaplaTeamApi.NAME, DaplaApi.NAME, DummyApi.NAME)
+                        .defaultValue(DaplaTeamApi.NAME)
                         .build(),
 
                 configProperty()
@@ -81,9 +81,10 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                         .name(ConfigPropertyKey.GROUP_SUFFIX_INCLUDE_REGEX)
                         .label("Group Suffix Include Regex")
                         .helpText("""
-                                Filter group names by their suffix. Only groups with suffixes matching the regex will be included.
+                                Filter group names by their category (developers, data-admin, etc). Only groups with categories matching the regex will be included.
                                 For example, to include only ‘developers’ and ‘data-admins’ groups, use the regex ‘developers|data-admins’.
                                 If not specified, all groups are included.
+                                Suffix is the old name for category - and should not be confused with how we use 'suffix' in the new dapla api.
                                 """)
                         .type(ConfigPropertyType.STRING)
                         .build(),
@@ -131,7 +132,7 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
     @Override
     protected Object mapToClaim(IDToken token, ProtocolMapperModel model, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
         debugLog(model, "Retrieve Dapla userinfo");
-        DaplaApiService teamApiService = teamApiService(model);
+        ApiService teamApiService = teamApiService(model);
 
         DaplaUserInfo daplaUserInfo = teamApiService.getDaplaUserInfo(userPrincipalName(userSession), groupIncludeFilter(model));
 
@@ -212,20 +213,20 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
      *
      * @return the implementation to use based on the user option
      */
-    DaplaApiService teamApiService(ProtocolMapperModel model) {
+    ApiService teamApiService(ProtocolMapperModel model) {
         String apiImpl = getConfigString(model, ConfigPropertyKey.API_IMPL);
         debugLog(model, "Use " + apiImpl + " Dapla Team API implementation");
-        if (DaplaTeamApiService.NAME.equals(apiImpl)) {
-            return new DaplaTeamApiService(DaplaTeamApiService.Config.builder()
+        if (DaplaTeamApi.NAME.equals(apiImpl)) {
+            return new DaplaTeamApi(DaplaTeamApi.Config.builder()
                     .teamApiUrl(URI.create(getConfigString(model, ConfigPropertyKey.API_URL)))
                     .build());
         }
-        if (DaplaApiServiceImpl.NAME.equals(apiImpl)) {
-            return new DaplaApiServiceImpl(DaplaApiServiceImpl.Config.builder()
+        if (DaplaApi.NAME.equals(apiImpl)) {
+            return new DaplaApi(DaplaApi.Config.builder()
                     .apiUrl(getConfigString(model, ConfigPropertyKey.API_URL))
                     .build());
-        } else if (DummyDaplaTeamApiService.NAME.equals(apiImpl)) {
-            return new DummyDaplaTeamApiService();
+        } else if (DummyApi.NAME.equals(apiImpl)) {
+            return new DummyApi();
         } else {
             throw new DaplaKeycloakException("Unsupported Team API implementation: " + apiImpl);
         }
