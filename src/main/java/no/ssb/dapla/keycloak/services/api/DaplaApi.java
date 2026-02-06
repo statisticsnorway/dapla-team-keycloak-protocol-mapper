@@ -76,7 +76,7 @@ public class DaplaApi implements ApiService {
 
     private static DaplaTeam jsonNodeToDaplaTeamWithGroups(ObjectNode teamAndGroupNode, Pattern categoriesToInclude) {
             var teamNode = teamAndGroupNode.get("team");
-            String autonomyLevel = teamNode.get("isManged").booleanValue() ? "MANAGED" : "SELF_MANAGED";
+            String autonomyLevel = teamNode.get("isManaged").booleanValue() ? "MANAGED" : "SELF_MANAGED";
             var team = new DaplaTeam(
                     teamNode.get("slug").textValue(),
                     teamNode.get("displayName").textValue(),
