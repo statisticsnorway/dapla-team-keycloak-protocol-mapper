@@ -42,7 +42,37 @@ public class DaplaApi implements ApiService {
     public DaplaUserInfo getDaplaUserInfo(String userPrincipalName, Pattern groupCategoriesToInclude) {
         String saToken = requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_DAPLA_API_SA_TOKEN);
 
-        String body = "{user(email:\"" + userPrincipalName + "\"){name email section{name code}isSectionManager teams{nodes{team{slug displayName isManaged section{name code}}groups{name}}}}}";
+        String body = """
+                {
+                    query: {
+                        user(email: "%s") {
+                            name
+                            email
+                            section {
+                              name
+                              code
+                            }
+                            isSectionManager
+                            teams {
+                              nodes {
+                                team {
+                                  slug
+                                  displayName
+                                  isManaged
+                                  section {
+                                    name
+                                    code
+                                  }
+                                }
+                                groups {
+                                  name
+                                }
+                              }
+                            }
+                          }
+                    }
+                }
+                """.formatted(userPrincipalName);
 
         Request request = new Request.Builder()
                 .url(config.apiUrl)
