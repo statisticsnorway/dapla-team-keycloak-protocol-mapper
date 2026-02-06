@@ -141,15 +141,9 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
 
     private String createClaim(DaplaUserInfo daplaUserInfo, ProtocolMapperModel model) {
 
-
-        boolean excludeTeamsWithoutGroups = getConfigBoolean(model, DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS);
-        Stream<DaplaTeam> teamStream = daplaUserInfo.teams()
-                .stream()
-                .filter(team -> !(excludeTeamsWithoutGroups && team.groups().isEmpty()));
-
-
         Map<String, Object> claim = new HashMap<>();
 
+        // Turn POJO to map for easier lookup / avoid switch/if-else for all fields
         Map<String, String> userMap = Json.toGenericMap(daplaUserInfo.user());
         for (String userPropToInclude : getConfigStringList(model, ConfigPropertyKey.DAPLA_USER_PROPS)) {
             if (userMap.containsKey(userPropToInclude)) {
@@ -157,40 +151,48 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
             }
         }
 
+        boolean excludeTeamsWithoutGroups = getConfigBoolean(model, DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS);
+        Stream<DaplaTeam> teamStream = daplaUserInfo.teams().stream();
+        if (excludeTeamsWithoutGroups) {
+            teamStream = teamStream.filter(team -> team.groups().size() > 0);
+        }
 
-        boolean nestTeams = getConfigBoolean(model, DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS);
-        if (nestTeams) {
-            claim.put("teams", teamStream
-                    .map(team -> {
-
-                        // We do the mapping on itself, since raw pojo to json mapping will leave us with a DaplaGroup object in the json, but we want it flat with just name
-                        List<String> groupsCategory = team.groups().stream().map(DaplaGroup::name).map(name -> name.replace(team.uniformName() + "-", "")).toList();
-
-                        //Avoid duplicate groups when team pojo -> json
-                        team.groups().clear();
-                        Map<String, Object> pojoMap = Json.toGenericMap(team);
-
-                        Map<String, Object> teamProps = new HashMap<>();
-                        for (String teamPropToInclude : getConfigStringList(model, ConfigPropertyKey.DAPLA_TEAM_PROPS)) {
-                            if (pojoMap.containsKey(teamPropToInclude)) {
-                                teamProps.put(teamPropToInclude, pojoMap.get(teamPropToInclude));
-                            }
-                        }
-
-                        teamProps.put("uniform_name", team.uniformName());
-                        teamProps.put("groups", groupsCategory);
-                        return teamProps;
-                    })
-                    .toList());
-        } else {
+        boolean flatStructure = !getConfigBoolean(model, DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS);
+        if (flatStructure) {
             var filteredTeams = teamStream.toList();
             claim.put("teams", filteredTeams.stream().map(DaplaTeam::uniformName).toList());
             claim.put("groups", filteredTeams.stream()
                     .flatMap((team -> team.groups().stream().map(DaplaGroup::name)))
                     .toList());
+            return Json.from(claim);
         }
 
+        List<String> teamPropertiesToIncludeInClaim = getConfigStringList(model, ConfigPropertyKey.DAPLA_TEAM_PROPS);
+        claim.put("teams", teamStream
+                .map(team -> daplaTeamToNestedStructure(team, teamPropertiesToIncludeInClaim))
+                .toList());
+
         return Json.from(claim);
+    }
+
+    private Map<String, Object> daplaTeamToNestedStructure(DaplaTeam team, List<String> teamPropertiesToIncludeInClaim) {
+        // With nested structure we should only have the category of the group without the team name, e.g. play-obr-developers -> developers
+        List<String> groupsCategory = team.groups().stream().map(DaplaGroup::name).map(name -> name.replace(team.uniformName() + "-", "")).toList();
+
+        // Turn POJO to map for easier lookup / avoid switch/if-else for all fields
+        Map<String, Object> pojoMap = Json.toGenericMap(team);
+
+        Map<String, Object> teamProps = new HashMap<>();
+        for (String teamPropToInclude : teamPropertiesToIncludeInClaim) {
+            if (pojoMap.containsKey(teamPropToInclude)) {
+                teamProps.put(teamPropToInclude, pojoMap.get(teamPropToInclude));
+            }
+        }
+
+        //Default claims on the team, even though not specified in TEAM_PROPS config key
+        teamProps.put("uniform_name", team.uniformName());
+        teamProps.put("groups", groupsCategory);
+        return teamProps;
     }
 
     /**
