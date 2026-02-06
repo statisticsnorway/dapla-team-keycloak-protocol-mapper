@@ -2,7 +2,7 @@ package no.ssb.dapla.keycloak.services.api;
 
 import org.junit.jupiter.api.Test;
 
-class DaplaApiServiceImplTest {
+class DaplaApiTest {
 
     @Test
     void getDaplaUserInfo() {

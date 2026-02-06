@@ -14,7 +14,7 @@ import static no.ssb.dapla.keycloak.Env.requiredEnv;
 
 @Tag("integration")
 @Disabled
-class DefaultDaplaTeamApiServiceIT {
+class DaplaTeamApiIT {
     private DaplaTeamApi service;
 
     @BeforeEach
