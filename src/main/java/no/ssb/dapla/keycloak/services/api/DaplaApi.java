@@ -43,7 +43,7 @@ public class DaplaApi implements ApiService {
 
         String body = """
                 {
-                    query: {
+                    "query": "{
                         user(email: "%s") {
                             name
                             email
@@ -70,7 +70,7 @@ public class DaplaApi implements ApiService {
                             }
                           }
                     }
-                }
+                }"
                 """.formatted(userPrincipalName);
 
         Request request = new Request.Builder()
