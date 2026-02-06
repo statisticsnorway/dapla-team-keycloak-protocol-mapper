@@ -1,10 +1,10 @@
 package no.ssb.dapla.keycloak.mappers.daplauserinfo;
 
 import no.ssb.dapla.keycloak.mappers.ConfigPropertyKey;
-import no.ssb.dapla.keycloak.services.api.DaplaApi;
 import no.ssb.dapla.keycloak.services.api.ApiService;
-import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
+import no.ssb.dapla.keycloak.services.api.DaplaApi;
 import no.ssb.dapla.keycloak.services.api.DaplaTeamApi;
+import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,9 +37,12 @@ public class DaplaUseInfoMapperIT {
 
     @BeforeEach
     void setUp() {
-        service = new DaplaTeamApi(DaplaTeamApi.Config.builder()
-                .teamApiUrl(URI.create("https://dapla-team-api.intern.test.ssb.no"))
-                .build());
+        service = new DaplaTeamApi(new DaplaTeamApi.Config(
+                URI.create("https://dapla-team-api.intern.test.ssb.no"),
+                requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_ID), requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_AUTH_URL),
+                requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_SECRET)
+        )
+        );
 
         protocolMapperModel = new ProtocolMapperModel();
         userSessionModel = Mockito.mock(UserSessionModel.class);
@@ -86,6 +89,7 @@ public class DaplaUseInfoMapperIT {
         String claimJson = (String) mapper.mapToClaim(idToken, protocolMapperModel, userSessionModel, keycloakSession, clientSessionContext);
         log.info(Json.prettyFrom(claimJson));
     }
+
     @Test
     void testMapToClaimUsingDaplaApiService() {
         protocolMapperModel.setConfig(Map.of(

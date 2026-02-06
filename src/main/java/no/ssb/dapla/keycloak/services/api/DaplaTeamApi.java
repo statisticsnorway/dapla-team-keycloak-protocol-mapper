@@ -2,9 +2,7 @@ package no.ssb.dapla.keycloak.services.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.Builder;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import no.ssb.dapla.keycloak.DaplaKeycloakException;
 import no.ssb.dapla.keycloak.services.model.DaplaGroup;
 import no.ssb.dapla.keycloak.services.model.DaplaTeam;
@@ -23,8 +21,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static no.ssb.dapla.keycloak.Env.Var.*;
-import static no.ssb.dapla.keycloak.Env.requiredEnv;
 import static no.ssb.dapla.keycloak.mappers.daplauserinfo.GroupCategory.ALLOWED_GROUP_CATEGORIES_PIPE_SEPARATED;
 
 /**
@@ -41,27 +37,28 @@ public class DaplaTeamApi implements ApiService {
     private final Config config;
 
     String getAuthToken() {
-        String clientId = requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_ID);
-        String url = requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_AUTH_URL);
+        String clientId = config.clientId;
+        String idpUrl = config.idpUrl;
+        String clientSecret = config.clientSecret;
 
         Request request = new Request.Builder()
-                .url(url)
+                .url(idpUrl)
                 .post(new FormBody.Builder()
                         .add("grant_type", "client_credentials")
                         .add("client_id", clientId)
-                        .add("client_secret", requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_SECRET))
+                        .add("client_secret", clientSecret)
                         .build())
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .build();
 
         try (Response response = httpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("Failed to fetch Dapla Team API keycloak token (client_id=%s, url=%s). Error: %s".formatted(clientId, url, response));
+                throw new IOException("Failed to fetch Dapla Team API keycloak token (client_id=%s, url=%s). Error: %s".formatted(clientId, idpUrl, response));
             }
             return Jq.queryOne(".access_token", response.body().string(), String.class)
                     .orElseThrow(() -> new DaplaKeycloakException("Missing access_token in response"));
         } catch (Exception e) {
-            throw new DaplaKeycloakException("Error fetching keycloak token from " + url, e);
+            throw new DaplaKeycloakException("Error fetching keycloak token from " + idpUrl, e);
         }
     }
 
@@ -69,7 +66,7 @@ public class DaplaTeamApi implements ApiService {
     public DaplaUserInfo getDaplaUserInfo(String userPrincipalName, Pattern groupCategoriesToInclude) {
 
         String authToken = getAuthToken();
-        String url = config.getTeamApiUrl().resolve("/users/%s?embed=teams,groups&select=groups.uniform_name".formatted(userPrincipalName)).toString();
+        String url = config.teamApiUrl().resolve("/users/%s?embed=teams,groups&select=groups.uniform_name".formatted(userPrincipalName)).toString();
         Request request = new Request.Builder()
                 .url(url)
                 .get()
@@ -91,7 +88,7 @@ public class DaplaTeamApi implements ApiService {
     private static DaplaUser jsonNodeToDaplaUser(JsonNode userInfo) {
         return Jq.queryOne("{email: .principal_name, name: .display_name, section_name, section_code}", userInfo, new TypeReference<Map<String, String>>() {
                 })
-                .map(fields -> new DaplaUser(fields.get("email"), fields.get("email"), fields.get("section_code"), fields.get("section_name"), null))
+                .map(fields -> new DaplaUser(fields.get("name"), fields.get("email"), fields.get("section_code"), fields.get("section_name"), null))
                 .orElseThrow();
     }
 
@@ -126,9 +123,6 @@ public class DaplaTeamApi implements ApiService {
                 .orElse(Collections.emptySet());
     }
 
-    @Value
-    @Builder
-    static public class Config {
-        URI teamApiUrl;
+    public record Config(URI teamApiUrl, String idpUrl, String clientId, String clientSecret) {
     }
 }

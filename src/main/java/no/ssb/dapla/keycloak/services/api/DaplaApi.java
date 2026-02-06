@@ -32,52 +32,53 @@ public class DaplaApi implements ApiService {
     private final OkHttpClient httpClient = new OkHttpClient();
     private final Config config;
 
+    static final String queryBody = """
+            {
+                "query": "{
+                    user(email: "%s") {
+                        name
+                        email
+                        section {
+                          name
+                          code
+                        }
+                        isSectionManager
+                        teams {
+                          nodes {
+                            team {
+                              slug
+                              displayName
+                              isManaged
+                              section {
+                                name
+                                code
+                              }
+                            }
+                            groups {
+                              name
+                            }
+                          }
+                        }
+                      }
+                }
+            }"
+            """;
+
     @Override
     public DaplaUserInfo getDaplaUserInfo(String userPrincipalName, Pattern groupCategoriesToInclude) {
         String saToken = config.serviceAccountToken();
 
-        String body = """
-                {
-                    "query": "{
-                        user(email: "%s") {
-                            name
-                            email
-                            section {
-                              name
-                              code
-                            }
-                            isSectionManager
-                            teams {
-                              nodes {
-                                team {
-                                  slug
-                                  displayName
-                                  isManaged
-                                  section {
-                                    name
-                                    code
-                                  }
-                                }
-                                groups {
-                                  name
-                                }
-                              }
-                            }
-                          }
-                    }
-                }"
-                """.formatted(userPrincipalName);
-
         Request request = new Request.Builder()
                 .url(config.apiUrl)
                 .header("Authorization", "Bearer " + saToken)
-                .post(RequestBody.create(body, MediaType.get("application/json; charset=utf-8")))
+                .post(RequestBody.create(queryBody.formatted(userPrincipalName), MediaType.get("application/json; charset=utf-8")))
                 .build();
 
         JsonNode userInfo = ApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
 
         DaplaUser user = Jq.queryOne(
-                        ".data.user | { name, email, section_name: .section.name, section_code: .section.code, isSectionManager}",
+                        // NB: Order of new object must follow constructor of DaplaUser
+                        ".data.user | { name, email, section_code: .section.code, section_name: .section.name, is_section_manager: .isSectionManager}",
                         userInfo,
                         new TypeReference<DaplaUser>() {
                         }

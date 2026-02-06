@@ -28,8 +28,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static no.ssb.dapla.keycloak.Env.Var.DAPLA_TEAM_PROTOCOL_MAPPER_DAPLA_API_SA_TOKEN;
-import static no.ssb.dapla.keycloak.Env.Var.TEST_USER_PRINCIPAL_NAME;
+import static no.ssb.dapla.keycloak.Env.Var.*;
 import static no.ssb.dapla.keycloak.Env.env;
 import static no.ssb.dapla.keycloak.Env.requiredEnv;
 
@@ -224,9 +223,12 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
         String apiImpl = getConfigString(model, ConfigPropertyKey.API_IMPL);
         debugLog(model, "Use " + apiImpl + " Dapla Team API implementation");
         if (DaplaTeamApi.NAME.equals(apiImpl)) {
-            return new DaplaTeamApi(DaplaTeamApi.Config.builder()
-                    .teamApiUrl(URI.create(getConfigString(model, ConfigPropertyKey.API_URL)))
-                    .build());
+            return new DaplaTeamApi(new DaplaTeamApi.Config(
+                    URI.create(getConfigString(model, ConfigPropertyKey.API_URL)),
+                    requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_AUTH_URL), requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_ID),
+                    requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_SECRET)
+            )
+            );
         }
         if (DaplaApi.NAME.equals(apiImpl)) {
             return new DaplaApi(new DaplaApi.Config(

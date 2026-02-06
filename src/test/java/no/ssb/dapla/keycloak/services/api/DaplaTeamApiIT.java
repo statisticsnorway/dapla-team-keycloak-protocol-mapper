@@ -19,9 +19,12 @@ class DaplaTeamApiIT {
 
     @BeforeEach
     public void setup() {
-        service = new DaplaTeamApi(DaplaTeamApi.Config.builder()
-                .teamApiUrl(URI.create("https://dapla-team-api.intern.test.ssb.no"))
-                .build());
+        service = new DaplaTeamApi(new DaplaTeamApi.Config(
+                URI.create("https://dapla-team-api.intern.test.ssb.no"),
+                requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_ID), requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_AUTH_URL),
+                requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_SECRET)
+        )
+        );
     }
 
     @Test
