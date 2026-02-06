@@ -4,10 +4,13 @@ import com.google.auto.service.AutoService;
 import no.ssb.dapla.keycloak.DaplaKeycloakException;
 import no.ssb.dapla.keycloak.mappers.AbstractTokenMapper;
 import no.ssb.dapla.keycloak.mappers.ConfigPropertyType;
+import no.ssb.dapla.keycloak.services.api.ApiService;
+import no.ssb.dapla.keycloak.services.api.DaplaApi;
+import no.ssb.dapla.keycloak.services.api.DaplaTeamApi;
+import no.ssb.dapla.keycloak.services.api.DummyApi;
 import no.ssb.dapla.keycloak.services.model.DaplaGroup;
 import no.ssb.dapla.keycloak.services.model.DaplaTeam;
 import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
-import no.ssb.dapla.keycloak.services.api.*;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -25,8 +28,10 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static no.ssb.dapla.keycloak.Env.Var.DAPLA_TEAM_PROTOCOL_MAPPER_DAPLA_API_SA_TOKEN;
 import static no.ssb.dapla.keycloak.Env.Var.TEST_USER_PRINCIPAL_NAME;
 import static no.ssb.dapla.keycloak.Env.env;
+import static no.ssb.dapla.keycloak.Env.requiredEnv;
 
 @AutoService(ProtocolMapper.class)
 public class DaplaUserInfoMapper extends AbstractTokenMapper {
@@ -224,9 +229,10 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                     .build());
         }
         if (DaplaApi.NAME.equals(apiImpl)) {
-            return new DaplaApi(DaplaApi.Config.builder()
-                    .apiUrl(getConfigString(model, ConfigPropertyKey.API_URL))
-                    .build());
+            return new DaplaApi(new DaplaApi.Config(
+                    getConfigString(model, ConfigPropertyKey.API_URL),
+                    requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_DAPLA_API_SA_TOKEN)
+            ));
         } else if (DummyApi.NAME.equals(apiImpl)) {
             return new DummyApi();
         } else {

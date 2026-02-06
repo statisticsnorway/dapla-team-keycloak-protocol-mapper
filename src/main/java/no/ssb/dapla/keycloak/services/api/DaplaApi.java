@@ -3,9 +3,7 @@ package no.ssb.dapla.keycloak.services.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.Builder;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import no.ssb.dapla.keycloak.services.model.DaplaGroup;
 import no.ssb.dapla.keycloak.services.model.DaplaTeam;
 import no.ssb.dapla.keycloak.services.model.DaplaUser;
@@ -20,9 +18,6 @@ import org.jboss.logging.Logger;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import static no.ssb.dapla.keycloak.Env.Var.DAPLA_TEAM_PROTOCOL_MAPPER_DAPLA_API_SA_TOKEN;
-import static no.ssb.dapla.keycloak.Env.requiredEnv;
 
 /**
  * Implementation that queries the
@@ -39,7 +34,7 @@ public class DaplaApi implements ApiService {
 
     @Override
     public DaplaUserInfo getDaplaUserInfo(String userPrincipalName, Pattern groupCategoriesToInclude) {
-        String saToken = requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_DAPLA_API_SA_TOKEN);
+        String saToken = config.serviceAccountToken();
 
         String body = """
                 {
@@ -122,9 +117,6 @@ public class DaplaApi implements ApiService {
         return team;
     }
 
-    @Value
-    @Builder
-    static public class Config {
-        String apiUrl;
+    public record Config(String apiUrl, String serviceAccountToken) {
     }
 }
