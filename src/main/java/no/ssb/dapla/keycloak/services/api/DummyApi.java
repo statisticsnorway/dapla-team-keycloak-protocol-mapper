@@ -29,13 +29,14 @@ public class DummyApi implements ApiService {
                                 "Dapla Felles",
                                 "724",
                                 "Dataplattform (724)",
-                                "MANAGED", withGroups(groupCategoriesToInclude)),
+                                "MANAGED",
+                                withGroups(groupCategoriesToInclude)),
                         new DaplaTeam("mu",
                                 "Team Mu",
                                 "399",
                                 "Nærings- og miljøstatistikk (399)",
-                                "MANAGED", withGroups(groupCategoriesToInclude,
-                                new DaplaGroup("mu-developers")
+                                "MANAGED",
+                                withGroups(groupCategoriesToInclude, new DaplaGroup("mu-developers")
                         )),
                         new DaplaTeam("mus",
                                 "Team Mus",
@@ -50,17 +51,19 @@ public class DummyApi implements ApiService {
                                 "Team Ost",
                                 "399",
                                 "Nærings- og miljøstatistikk (399)",
-                                "SELF_MANAGED", withGroups(groupCategoriesToInclude,
-                                new DaplaGroup("mus-ost-developers"),
-                                new DaplaGroup("mus-ost-developers-mysuffix")
+                                "SELF_MANAGED",
+                                withGroups(groupCategoriesToInclude,
+                                    new DaplaGroup("mus-ost-developers"),
+                                    new DaplaGroup("mus-ost-developers-mysuffix")
                         )),
                         new DaplaTeam("play-foeniks-a",
                                 "Play Føniks A",
                                 "724",
                                 "Dataplattform (724)",
-                                "SELF_MANAGED", withGroups(groupCategoriesToInclude,
-                                new DaplaGroup("play-foeniks-a-developers"),
-                                new DaplaGroup("play-foeniks-a-data-admins")
+                                "SELF_MANAGED",
+                                withGroups(groupCategoriesToInclude,
+                                    new DaplaGroup("play-foeniks-a-developers"),
+                                    new DaplaGroup("play-foeniks-a-data-admins")
                         ))
                 )
         );

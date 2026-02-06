@@ -97,17 +97,10 @@ public class DaplaTeamApi implements ApiService {
 
 
     private Map<String, DaplaTeam> jsonNodeToDaplaTeamMap(JsonNode userInfo) {
-        return Jq.queryOne("[._embedded.teams[]]", userInfo, new TypeReference<List<Map<String, String>>>() {
+        return Jq.queryOne("[._embedded.teams[]]", userInfo, new TypeReference<List<DaplaTeam>>() {
                 })
                 .orElse(Collections.emptyList())
                 .stream()
-                .map(fields -> new DaplaTeam(
-                        fields.get("uniform_name"),
-                        fields.get("display_name"),
-                        fields.get("section_code"),
-                        fields.get("section_name"),
-                        fields.get("autonomy_level")
-                ))
                 .collect(Collectors.toMap(DaplaTeam::uniformName, team -> team));
     }
 
