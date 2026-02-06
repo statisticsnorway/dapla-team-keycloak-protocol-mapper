@@ -90,7 +90,7 @@ public class DaplaApi implements ApiService {
                 .orElseThrow();
 
 
-        List<DaplaTeam> teams = Jq.queryOne(".data.user.teams[]", userInfo, new TypeReference<List<ObjectNode>>() {
+        List<DaplaTeam> teams = Jq.queryOne("[.data.user.teams.nodes[]]", userInfo, new TypeReference<List<ObjectNode>>() {
                 })
                 .orElse(Collections.emptyList())
                 .stream()
