@@ -82,13 +82,11 @@ public class DaplaApi implements ApiService {
 
         JsonNode userInfo = ApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
 
-        DaplaUser user = Jq.queryOne(".data.user | { name, email, section_name: .section.name, section_code: .section.code, isSectionManager}", userInfo, new TypeReference<Map<String, String>>() {
-                }).map(fields -> new DaplaUser(
-                        fields.get("email"),
-                        fields.get("email"),
-                        fields.get("section_code"),
-                        fields.get("section_name"),
-                        Boolean.valueOf(fields.get("isSectionManager")))
+        DaplaUser user = Jq.queryOne(
+                        ".data.user | { name, email, section_name: .section.name, section_code: .section.code, isSectionManager}",
+                        userInfo,
+                        new TypeReference<DaplaUser>() {
+                        }
                 )
                 .orElseThrow();
 
