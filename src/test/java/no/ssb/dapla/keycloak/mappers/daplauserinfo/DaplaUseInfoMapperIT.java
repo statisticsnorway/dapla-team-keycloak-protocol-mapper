@@ -8,6 +8,7 @@ import no.ssb.dapla.keycloak.services.api.DaplaTeamApi;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.models.*;
