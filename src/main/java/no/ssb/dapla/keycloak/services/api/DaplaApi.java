@@ -19,7 +19,6 @@ import org.jboss.logging.Logger;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import static no.ssb.dapla.keycloak.Env.Var.DAPLA_TEAM_PROTOCOL_MAPPER_DAPLA_API_SA_TOKEN;
@@ -103,24 +102,24 @@ public class DaplaApi implements ApiService {
 
 
     private static DaplaTeam jsonNodeToDaplaTeamWithGroups(ObjectNode teamAndGroupNode, Pattern categoriesToInclude) {
-            var teamNode = teamAndGroupNode.get("team");
-            String autonomyLevel = teamNode.get("isManaged").booleanValue() ? "MANAGED" : "SELF_MANAGED";
-            var team = new DaplaTeam(
-                    teamNode.get("slug").textValue(),
-                    teamNode.get("displayName").textValue(),
-                    teamNode.get("section").get("code").textValue(),
-                    teamNode.get("section").get("name").textValue(),
-                    autonomyLevel
-            );
+        var teamNode = teamAndGroupNode.get("team");
+        String autonomyLevel = teamNode.get("isManaged").booleanValue() ? "MANAGED" : "SELF_MANAGED";
+        var team = new DaplaTeam(
+                teamNode.get("slug").textValue(),
+                teamNode.get("displayName").textValue(),
+                teamNode.get("section").get("code").textValue(),
+                teamNode.get("section").get("name").textValue(),
+                autonomyLevel
+        );
 
-            for (final JsonNode groupNode : teamAndGroupNode.get("groups")) {
-                DaplaGroup group = new DaplaGroup(groupNode.get("name").asText());
-                if (categoriesToInclude == null || categoriesToInclude.matcher(group.name()).matches()) {
-                    team.groups().add(group);
-                }
+        for (final JsonNode groupNode : teamAndGroupNode.get("groups")) {
+            DaplaGroup group = new DaplaGroup(groupNode.get("name").asText());
+            if (categoriesToInclude == null || categoriesToInclude.matcher(group.name()).matches()) {
+                team.groups().add(group);
             }
+        }
 
-            return team;
+        return team;
     }
 
     @Value
