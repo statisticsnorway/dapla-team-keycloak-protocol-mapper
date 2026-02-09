@@ -12,8 +12,10 @@ public record DaplaTeam(
         ArrayList<DaplaGroup> groups// We want it to be array list since we modify the names if the groups shall be nested
 ) {
         public DaplaTeam {
-                // To avoid NPE when we try to access groups after deserialization
-                groups = new ArrayList<>();
+                // groups can be null after deserialization if no groups are present. To avoid NPE we set it to a empty list
+                if(groups == null) {
+                        groups = new ArrayList<>();
+                }
         }
 
         public DaplaTeam(String uniformName, String displayName, String sectionCode, String sectionName, String autonomyLevel) {
