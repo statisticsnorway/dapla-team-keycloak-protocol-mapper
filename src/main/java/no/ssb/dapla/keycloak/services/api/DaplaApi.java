@@ -35,7 +35,7 @@ public class DaplaApi implements ApiService {
     static final String queryBody = """
             {
                 "query": "{
-                    user(email: "%s") {
+                    user(email: \\"%s\\") {
                         name
                         email
                         section {
@@ -60,9 +60,9 @@ public class DaplaApi implements ApiService {
                           }
                         }
                       }
-                }
-            }"
-            """;
+                }"
+            }
+            """.replaceAll("[\n\r]", "");
 
     @Override
     public DaplaUserInfo getDaplaUserInfo(String userPrincipalName, Pattern groupCategoriesToInclude) {

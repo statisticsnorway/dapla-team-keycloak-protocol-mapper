@@ -1,9 +1,11 @@
 package no.ssb.dapla.keycloak.services.api;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpServer;
 import no.ssb.dapla.keycloak.services.model.DaplaGroup;
 import no.ssb.dapla.keycloak.services.model.DaplaTeam;
 import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
+import no.ssb.dapla.keycloak.utils.Json;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +54,13 @@ class DaplaApiTest {
         if (server != null) {
             server.stop(0);
         }
+    }
+
+    @Test
+    void queryBodyShouldBeValidJson() {
+        String bodyString = DaplaApi.queryBody.formatted(USER_EMAIL);
+        JsonNode jsonNode = Json.toJsonNode(bodyString);
+        assertThat(jsonNode.get("query")).isNotNull();
     }
 
     @Test
