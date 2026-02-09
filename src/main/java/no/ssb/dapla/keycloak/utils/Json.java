@@ -4,32 +4,18 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
 
 import java.io.IOException;
 import java.util.Map;
 
 public class Json {
 
-    private static final Moshi MOSHI = new Moshi.Builder().build();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     static {
         OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         OBJECT_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-    }
-
-    /**
-     * Get Moshi adapter for class
-     */
-    public static JsonAdapter<Map<String,Object>> genericMapAdapter() {
-        return MOSHI.adapter(new TypeReference<Map<String, Object>>() {}.getType());
-    }
-
-    public static <T> JsonAdapter<T> adapter(Class<T> type) {
-        return MOSHI.adapter(type).lenient(); // FIXME remove lenient?
     }
 
     /**
