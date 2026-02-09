@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cp /tmp/custom-providers/* /opt/bitnami/keycloak/providers
+cp /tmp/custom-providers/* /opt/keycloak/providers

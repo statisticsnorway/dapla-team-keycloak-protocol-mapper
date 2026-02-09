@@ -1,17 +1,16 @@
 package no.ssb.dapla.keycloak.mappers.daplauserinfo;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.auto.service.AutoService;
 import no.ssb.dapla.keycloak.DaplaKeycloakException;
 import no.ssb.dapla.keycloak.mappers.AbstractTokenMapper;
 import no.ssb.dapla.keycloak.mappers.ConfigPropertyType;
-import no.ssb.dapla.keycloak.services.teamapi.DaplaTeamApiService;
-import no.ssb.dapla.keycloak.services.teamapi.DefaultDaplaTeamApiService;
-import no.ssb.dapla.keycloak.services.teamapi.DummyDaplaTeamApiService;
-import no.ssb.dapla.keycloak.utils.Jq;
+import no.ssb.dapla.keycloak.services.api.ApiService;
+import no.ssb.dapla.keycloak.services.api.DaplaApi;
+import no.ssb.dapla.keycloak.services.api.DaplaTeamApi;
+import no.ssb.dapla.keycloak.services.api.DummyApi;
+import no.ssb.dapla.keycloak.services.model.DaplaGroup;
+import no.ssb.dapla.keycloak.services.model.DaplaTeam;
+import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -22,12 +21,16 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.IDToken;
 
 import java.net.URI;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static no.ssb.dapla.keycloak.Env.Var.TEST_USER_PRINCIPAL_NAME;
+import static no.ssb.dapla.keycloak.Env.Var.*;
 import static no.ssb.dapla.keycloak.Env.env;
+import static no.ssb.dapla.keycloak.Env.requiredEnv;
 
 @AutoService(ProtocolMapper.class)
 public class DaplaUserInfoMapper extends AbstractTokenMapper {
@@ -50,18 +53,19 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                         .label("Dapla Team API Impl")
                         .helpText("""
                                 The API implementation.
-                                Default: Online Dapla Team API
+                                Default: Online Dapla Team API (old, REST)
+                                Dapla-api: Online Dapla API (new, graphql)
                                 Dummy: Offline, dummy replacement instead of a real API invocation.""")
                         .type(ConfigPropertyType.LIST)
-                        .options(DefaultDaplaTeamApiService.NAME, DummyDaplaTeamApiService.NAME)
-                        .defaultValue(DefaultDaplaTeamApiService.NAME)
+                        .options(DaplaTeamApi.NAME, DaplaApi.NAME, DummyApi.NAME)
+                        .defaultValue(DaplaTeamApi.NAME)
                         .build(),
 
                 configProperty()
                         .name(ConfigPropertyKey.API_URL)
                         .label("Dapla Team API URL")
                         .helpText("""
-                                Root URL for the Dapla Team API.
+                                Root URL for the API.
                                 This is not relevant if 'Dapla Team API Impl' is Dummy.""")
                         .type(ConfigPropertyType.STRING)
                         .defaultValue("http://dapla-team-api.dapla-platform")
@@ -81,9 +85,10 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                         .name(ConfigPropertyKey.GROUP_SUFFIX_INCLUDE_REGEX)
                         .label("Group Suffix Include Regex")
                         .helpText("""
-                                Filter group names by their suffix. Only groups with suffixes matching the regex will be included.
+                                Filter group names by their category (developers, data-admin, etc). Only groups with categories matching the regex will be included.
                                 For example, to include only ‘developers’ and ‘data-admins’ groups, use the regex ‘developers|data-admins’.
                                 If not specified, all groups are included.
+                                Suffix is the old name for category - and should not be confused with how we use 'suffix' in the new dapla api.
                                 """)
                         .type(ConfigPropertyType.STRING)
                         .build(),
@@ -104,7 +109,7 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                         .label("Dapla user properties to include")
                         .helpText("""
                                 Comma-separated list of Dapla user properties to include on root level of the claim.
-                                Such as: azure_ad_id, division_code, division_name, section_code, section_name""")
+                                Such as: section_code, section_name""")
                         .type(ConfigPropertyType.STRING) // TODO: Until https://github.com/keycloak/keycloak/issues/26794 is fixed, we have to use a (comma-spearated) String here
                         .build(),
 
@@ -112,12 +117,12 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
                         .name(ConfigPropertyKey.DAPLA_TEAM_PROPS)
                         .label("Dapla team properties to include")
                         .helpText("""
-                                 Comma-separated list of Dapla team properties to include in the claim's team objects.
-                                 Only applicable if teams info are nested.
-                                 Such as: autonomy_level, display_name, section_code, source_data_classification, statistical_products""")
+                                Comma-separated list of Dapla team properties to include in the claim's team objects.
+                                Only applicable if teams info are nested.
+                                Such as: autonomy_level, display_name, section_code""")
                         .type(ConfigPropertyType.STRING) // TODO: Until https://github.com/keycloak/keycloak/issues/26794 is fixed, we have to use a (comma-spearated) String here
                         .build()
-                );
+        );
 
         // Allow the mapper to configure the target value to be "JSON" (required)
         OIDCAttributeMapperHelper.addJsonTypeConfig(configProperties);
@@ -125,15 +130,73 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
 
     @Override
     protected String helpText() {
-        return "Adds a 'dapla' user info claim, with selected data retrieved from Dapla Team API";
+        return "Adds a 'dapla' user info claim, with selected data retrieved from Dapla Api or Dapla Team Api";
     }
 
     @Override
     protected Object mapToClaim(IDToken token, ProtocolMapperModel model, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
-        debugLog(model,"Retrieve Dapla userinfo");
-        DaplaTeamApiService teamApiService = teamApiService(model);
-        JsonNode daplaUserInfoJson = teamApiService.getDaplaUserInfo(userPrincipalName(userSession));
-        return createClaim(Json.from(daplaUserInfoJson), model);
+        debugLog(model, "Retrieve Dapla userinfo");
+        ApiService teamApiService = teamApiService(model);
+
+        DaplaUserInfo daplaUserInfo = teamApiService.getDaplaUserInfo(userPrincipalName(userSession), groupIncludeFilter(model));
+
+        return createClaim(daplaUserInfo, model);
+    }
+
+    private String createClaim(DaplaUserInfo daplaUserInfo, ProtocolMapperModel model) {
+
+        Map<String, Object> claim = new HashMap<>();
+
+        // Turn POJO to map for easier lookup / avoid switch/if-else for all fields
+        Map<String, String> userMap = Json.toGenericMap(daplaUserInfo.user());
+        for (String userPropToInclude : getConfigStringList(model, ConfigPropertyKey.DAPLA_USER_PROPS)) {
+            if (userMap.containsKey(userPropToInclude)) {
+                claim.put(userPropToInclude, userMap.get(userPropToInclude));
+            }
+        }
+
+        boolean excludeTeamsWithoutGroups = getConfigBoolean(model, DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS);
+        Stream<DaplaTeam> teamStream = daplaUserInfo.teams().stream();
+        if (excludeTeamsWithoutGroups) {
+            teamStream = teamStream.filter(team -> team.groups().size() > 0);
+        }
+
+        boolean flatStructure = !getConfigBoolean(model, DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS);
+        if (flatStructure) {
+            var filteredTeams = teamStream.toList();
+            claim.put("teams", filteredTeams.stream().map(DaplaTeam::uniformName).toList());
+            claim.put("groups", filteredTeams.stream()
+                    .flatMap((team -> team.groups().stream().map(DaplaGroup::name)))
+                    .toList());
+            return Json.from(claim);
+        }
+
+        List<String> teamPropertiesToIncludeInClaim = getConfigStringList(model, ConfigPropertyKey.DAPLA_TEAM_PROPS);
+        claim.put("teams", teamStream
+                .map(team -> daplaTeamToNestedStructure(team, teamPropertiesToIncludeInClaim))
+                .toList());
+
+        return Json.from(claim);
+    }
+
+    private Map<String, Object> daplaTeamToNestedStructure(DaplaTeam team, List<String> teamPropertiesToIncludeInClaim) {
+        // With nested structure we should only have the category of the group without the team name, e.g. play-obr-developers -> developers
+        List<String> groupsCategory = team.groups().stream().map(DaplaGroup::name).map(name -> name.replace(team.uniformName() + "-", "")).toList();
+
+        // Turn POJO to map for easier lookup / avoid switch/if-else for all fields
+        Map<String, Object> pojoMap = Json.toGenericMap(team);
+
+        Map<String, Object> teamProps = new HashMap<>();
+        for (String teamPropToInclude : teamPropertiesToIncludeInClaim) {
+            if (pojoMap.containsKey(teamPropToInclude)) {
+                teamProps.put(teamPropToInclude, pojoMap.get(teamPropToInclude));
+            }
+        }
+
+        //Default claims on the team, even though not specified in TEAM_PROPS config key
+        teamProps.put("uniform_name", team.uniformName());
+        teamProps.put("groups", groupsCategory);
+        return teamProps;
     }
 
     /**
@@ -152,116 +215,38 @@ public class DaplaUserInfoMapper extends AbstractTokenMapper {
     }
 
     /**
-     * Instantiate Dapla Team API service based on the configuration.
+     * Instantiate Dapla API service based on the configuration.
      *
-     * @param model
-     * @return
+     * @return the implementation to use based on the user option
      */
-    DaplaTeamApiService teamApiService(ProtocolMapperModel model) {
+    ApiService teamApiService(ProtocolMapperModel model) {
         String apiImpl = getConfigString(model, ConfigPropertyKey.API_IMPL);
         debugLog(model, "Use " + apiImpl + " Dapla Team API implementation");
-        if (DefaultDaplaTeamApiService.NAME.equals(apiImpl)) {
-            return new DefaultDaplaTeamApiService(DefaultDaplaTeamApiService.Config.builder()
-                    .teamApiUrl(URI.create(getConfigString(model, ConfigPropertyKey.API_URL)))
-                    .build());
+        if (DaplaTeamApi.NAME.equals(apiImpl)) {
+            return new DaplaTeamApi(new DaplaTeamApi.Config(
+                    URI.create(getConfigString(model, ConfigPropertyKey.API_URL)),
+                    requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_AUTH_URL), requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_ID),
+                    requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_SECRET)
+            )
+            );
         }
-        else if (DummyDaplaTeamApiService.NAME.equals(apiImpl)) {
-            return new DummyDaplaTeamApiService();
-        }
-        else {
+        if (DaplaApi.NAME.equals(apiImpl)) {
+            return new DaplaApi(new DaplaApi.Config(
+                    getConfigString(model, ConfigPropertyKey.API_URL),
+                    requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_DAPLA_API_SA_TOKEN)
+            ));
+        } else if (DummyApi.NAME.equals(apiImpl)) {
+            return new DummyApi();
+        } else {
             throw new DaplaKeycloakException("Unsupported Team API implementation: " + apiImpl);
         }
     }
 
-    /**
-     * Create the claim from the Dapla user info JSON.
-     * <p>
-     *     The claim will contain the user properties specified in the configuration, as well as the groups and teams.
-     * </p>
-     *
-     * @param daplaUserInfoJson The Dapla user info JSON as returned from DaplaTeamApiService
-     * @param model The ProtocolMapperModel
-     * @return The claim as a JSON string
-     */
-    String createClaim(String daplaUserInfoJson, ProtocolMapperModel model) {
-        Map<String, Object> claim = new HashMap<>();
-
-        List<ObjectNode> teams = Jq.queryOne("[._embedded.teams[]]", daplaUserInfoJson, new TypeReference<List<ObjectNode>>() {})
-                .orElse(Collections.emptyList());
-
-        Set<String> groups = Jq.queryOne("[._embedded.groups[].uniform_name]", daplaUserInfoJson, new TypeReference<Set<String>>() {})
-                .orElse(Collections.emptySet()).stream()
-                // If a filter is specified, only keep groups with suffixes matching the regex:
-                // Note that this is only an intermediate filtering, since the regex will include disallowed suffixes if we have team names that share a prefix
-                .filter(group -> groupIncludeFilter(model).map(regex -> regex.matcher(group).matches()).orElse(true))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
-        // Retain only configured team properties
-        Set<String> teamProps = getConfigStringSet(model, ConfigPropertyKey.DAPLA_TEAM_PROPS);
-        teams.forEach(team -> {
-            Iterator<String> fields = team.fieldNames();
-            while (fields.hasNext()) {
-                String field = fields.next();
-                if (!"uniform_name".equals(field) && !teamProps.contains(field)) {
-                    fields.remove();
-                }
-            }
-        });
-
-        // Query for and add configured user properties to claim
-        List<String> userProps = getConfigStringList(model, ConfigPropertyKey.DAPLA_USER_PROPS);
-        for (String userProp : userProps) {
-                Jq.queryOne(".%s".formatted(userProp), daplaUserInfoJson, String.class)
-                        .ifPresent(value -> claim.put(userProp, value));
-            }
-
-        boolean nestTeams = getConfigBoolean(model, ConfigPropertyKey.NESTED_TEAMS);
-        boolean excludeTeamsWithoutGroups = getConfigBoolean(model, ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS);
-
-        List<ObjectNode> nestedTeams = nestGroupsIntoTeams(teams, groups, excludeTeamsWithoutGroups);
-        if (nestTeams) {
-            claim.put("teams", nestedTeams);
-        } else {
-            claim.put("teams", nestedTeams.stream().map(team -> team.get("uniform_name").asText()).toList());
-            claim.put("groups", groups);
-        }
-
-        return Json.from(claim);
-    }
-
-    /**
-     * Nest groups into teams. Each team object will contain a 'groups' array with the group suffixes.
-     * In addition to other team properties, as configured.
-     *
-     * @param teams team objects
-     * @param groupNames group uniform names
-     * @return List of team objects with nested groups
-     */
-    List<ObjectNode> nestGroupsIntoTeams(List<ObjectNode> teams, Collection<String> groupNames, boolean excludeTeamsWithoutGroups) {
-        Set<String> allTeamNames = teams.stream()
-                .map(team -> team.get("uniform_name").asText())
-                .collect(Collectors.toSet());
-        Set<String> allowedSuffixes = GroupSuffixFilter.allowedSuffixes(allTeamNames, groupNames);
-
-        return teams.stream()
-                .map(team -> {
-                    String teamUniformName = team.get("uniform_name").asText();
-                    ArrayNode teamGroupsArrayNode = team.putArray("groups");
-                    groupNames.stream()
-                            .filter(group -> group.startsWith(teamUniformName))
-                            .map(group -> group.substring(teamUniformName.length() + 1))
-                            .filter(allowedSuffixes::contains)
-                            .forEach(teamGroupsArrayNode::add);
-                    return team;
-                })
-                .filter(team -> !excludeTeamsWithoutGroups || !team.get("groups").isEmpty())
-                .toList();
-    }
-
-    Optional<Pattern> groupIncludeFilter(ProtocolMapperModel model) {
+    Pattern groupIncludeFilter(ProtocolMapperModel model) {
         // TODO: Validate somehow that the regex is valid?
         // If the user does not provide a valid regex, filtering is likely to fail spectacularly.
         return Optional.ofNullable(getConfigString(model, ConfigPropertyKey.GROUP_SUFFIX_INCLUDE_REGEX))
-                .map(suffixRegex -> Pattern.compile(".*-(" + suffixRegex + ")"));
+                .map(suffixRegex -> Pattern.compile(".*-(" + suffixRegex + ")"))
+                .orElse(null);
     }
 }

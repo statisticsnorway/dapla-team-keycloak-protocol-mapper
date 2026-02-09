@@ -1,9 +1,11 @@
 package no.ssb.dapla.keycloak.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import net.thisptr.jackson.jq.BuiltinFunctionLoader;
 import net.thisptr.jackson.jq.JsonQuery;
 import net.thisptr.jackson.jq.Scope;
@@ -26,13 +28,21 @@ public class Jq {
 
         OBJECT_MAPPER = new ObjectMapper();
         OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        OBJECT_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
     }
 
     public static List<JsonNode> query(String jqExpression, String json) {
+        try {
+            JsonNode in = OBJECT_MAPPER.readTree(json);
+            return query(jqExpression, in);
+        } catch (Exception e) {
+            throw new JqException("jq query error for jqExpression=" + jqExpression, e);
+        }
+    }
+    public static List<JsonNode> query(String jqExpression, JsonNode in) {
         Scope childScope = Scope.newChildScope(ROOT_JQ_SCOPE);
         List<JsonNode> out = new ArrayList<>();
         try {
-            JsonNode in = OBJECT_MAPPER.readTree(json);
             JsonQuery jq = JsonQuery.compile(jqExpression, Versions.JQ_1_6);
 
             jq.apply(childScope, in, out::add);
@@ -57,6 +67,19 @@ public class Jq {
     }
 
     public static <T> Optional<T> queryOne(String jqPath, String json, TypeReference<T> type) {
+        List<JsonNode> nodes = query(jqPath, json);
+        if (nodes.size() == 0) {
+            return Optional.empty();
+        }
+        else if (nodes.size() > 1) {
+            throw new JqException("Expected JQ expression to match a single value, but multiple matches was found: " + nodes);
+        }
+        else {
+            return Optional.ofNullable(OBJECT_MAPPER.convertValue(nodes.get(0), type));
+        }
+    }
+
+    public static <T> Optional<T> queryOne(String jqPath, JsonNode json, TypeReference<T> type) {
         List<JsonNode> nodes = query(jqPath, json);
         if (nodes.size() == 0) {
             return Optional.empty();

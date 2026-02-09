@@ -1,6 +1,6 @@
-package no.ssb.dapla.keycloak.services.teamapi;
+package no.ssb.dapla.keycloak.services.api;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -14,14 +14,17 @@ import static no.ssb.dapla.keycloak.Env.requiredEnv;
 
 @Tag("integration")
 @Disabled
-class DefaultDaplaTeamApiServiceIT {
-    private DefaultDaplaTeamApiService service;
+class DaplaTeamApiIT {
+    private DaplaTeamApi service;
 
     @BeforeEach
     public void setup() {
-        service = new DefaultDaplaTeamApiService(DefaultDaplaTeamApiService.Config.builder()
-                .teamApiUrl(URI.create("http://dapla-team-api.dapla-platform"))
-                .build());
+        service = new DaplaTeamApi(new DaplaTeamApi.Config(
+                URI.create("https://dapla-team-api.intern.test.ssb.no"),
+                requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_ID), requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_AUTH_URL),
+                requiredEnv(DAPLA_TEAM_PROTOCOL_MAPPER_KEYCLOAK_CLIENT_SECRET)
+        )
+        );
     }
 
     @Test
@@ -41,7 +44,7 @@ class DefaultDaplaTeamApiServiceIT {
     @Test
     public void testGetDaplaUserInfo() {
         String userPrincipalName = requiredEnv(TEST_USER_PRINCIPAL_NAME);
-        JsonNode daplaInfoJson = service.getDaplaUserInfo(userPrincipalName);
+        DaplaUserInfo daplaInfoJson = service.getDaplaUserInfo(userPrincipalName, null);
         System.out.println(Json.prettyFrom(daplaInfoJson));
     }
 

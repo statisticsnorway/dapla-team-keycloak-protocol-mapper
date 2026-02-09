@@ -1,7 +1,7 @@
 package no.ssb.dapla.keycloak.mappers.daplauserinfo;
 
 import no.ssb.dapla.keycloak.mappers.ConfigPropertyKey;
-import no.ssb.dapla.keycloak.services.teamapi.DummyDaplaTeamApiService;
+import no.ssb.dapla.keycloak.services.api.DummyApi;
 import no.ssb.dapla.keycloak.utils.Json;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,10 +45,10 @@ class DaplaUserInfoMapperTest {
     void mapToClaim_nested() throws Exception {
         protocolMapperModel.setConfig(Map.of(
                 ConfigPropertyKey.VERBOSE_LOGGING, Boolean.TRUE.toString(),
-                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyDaplaTeamApiService.NAME,
+                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyApi.NAME,
                 DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS, Boolean.TRUE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.DAPLA_USER_PROPS, "section_code",
-                DaplaUserInfoMapper.ConfigPropertyKey.DAPLA_TEAM_PROPS, "autonomy_level, source_data_classification, section_code",
+                DaplaUserInfoMapper.ConfigPropertyKey.DAPLA_TEAM_PROPS, "autonomy_level, section_code",
                 DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS, Boolean.FALSE.toString()
         ));
 
@@ -61,8 +61,7 @@ class DaplaUserInfoMapperTest {
                  "teams" : [ {
                    "uniform_name" : "dapla-felles",
                    "section_code" : "724",
-                   "autonomy_level" : "SELF_MANAGED",
-                   "source_data_classification" : [ ],
+                   "autonomy_level" : "MANAGED",
                    "groups" : [ ]
                  }, {
                    "uniform_name" : "mu",
@@ -72,20 +71,18 @@ class DaplaUserInfoMapperTest {
                  }, {
                    "uniform_name" : "mus",
                    "section_code" : "399",
-                   "autonomy_level" : "SEMI_MANAGED",
+                   "autonomy_level" : "MANAGED",
                    "groups" : [ "data-admins", "developers" ]
                  }, {
                    "uniform_name" : "mus-ost",
                    "section_code" : "399",
                    "autonomy_level" : "SELF_MANAGED",
-                   "source_data_classification" : [ "PII", "CONSENT_BASED" ],
-                   "groups" : [ "developers", "tech-admins" ]
+                   "groups" : [ "developers", "developers-mysuffix"  ]
                  }, {
                    "uniform_name" : "play-foeniks-a",
                    "section_code" : "724",
                    "autonomy_level" : "SELF_MANAGED",
-                   "source_data_classification" : [ ],
-                   "groups" : [ "consumers", "data-admins", "editors", "developers" ]
+                   "groups" : [ "data-admins", "developers" ]
                  } ],
                  "section_code" : "399"
                }
@@ -96,7 +93,7 @@ class DaplaUserInfoMapperTest {
     void mapToClaim_nested_withGroupRegex_excludingTeamsWithoutGroups() throws Exception {
         protocolMapperModel.setConfig(Map.of(
                 ConfigPropertyKey.VERBOSE_LOGGING, Boolean.TRUE.toString(),
-                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyDaplaTeamApiService.NAME,
+                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyApi.NAME,
                 DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS, Boolean.TRUE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.GROUP_SUFFIX_INCLUDE_REGEX, "data-admins",
                 DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS, Boolean.TRUE.toString()
@@ -121,7 +118,7 @@ class DaplaUserInfoMapperTest {
     void mapToClaim_flat() throws Exception {
         protocolMapperModel.setConfig(Map.of(
                 ConfigPropertyKey.VERBOSE_LOGGING, Boolean.TRUE.toString(),
-                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyDaplaTeamApiService.NAME,
+                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyApi.NAME,
                 DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS, Boolean.FALSE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS, Boolean.FALSE.toString()
         ));
@@ -144,11 +141,9 @@ class DaplaUserInfoMapperTest {
                      "mus-developers",
                      "mus-data-admins",
                      "mus-ost-developers",
-                     "mus-ost-tech-admins",
+                     "mus-ost-developers-mysuffix",
                      "play-foeniks-a-developers",
-                     "play-foeniks-a-data-admins",
-                     "play-foeniks-a-consumers",
-                     "play-foeniks-a-editors"
+                     "play-foeniks-a-data-admins"
                    ]
                  }
                 """, jsonClaim, JSONCompareMode.NON_EXTENSIBLE);
@@ -158,7 +153,7 @@ class DaplaUserInfoMapperTest {
     void mapToClaim_flat_withGroupRegex_excludingTeamsWithoutGroups() throws Exception {
         protocolMapperModel.setConfig(Map.of(
                 ConfigPropertyKey.VERBOSE_LOGGING, Boolean.TRUE.toString(),
-                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyDaplaTeamApiService.NAME,
+                DaplaUserInfoMapper.ConfigPropertyKey.API_IMPL, DummyApi.NAME,
                 DaplaUserInfoMapper.ConfigPropertyKey.NESTED_TEAMS, Boolean.FALSE.toString(),
                 DaplaUserInfoMapper.ConfigPropertyKey.GROUP_SUFFIX_INCLUDE_REGEX, "data-admins",
                 DaplaUserInfoMapper.ConfigPropertyKey.EXCLUDE_TEAMS_WITHOUT_GROUPS, Boolean.TRUE.toString()

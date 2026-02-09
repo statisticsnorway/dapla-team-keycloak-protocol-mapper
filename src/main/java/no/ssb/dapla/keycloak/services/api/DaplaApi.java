@@ -1,0 +1,123 @@
+package no.ssb.dapla.keycloak.services.api;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.RequiredArgsConstructor;
+import no.ssb.dapla.keycloak.services.model.DaplaGroup;
+import no.ssb.dapla.keycloak.services.model.DaplaTeam;
+import no.ssb.dapla.keycloak.services.model.DaplaUser;
+import no.ssb.dapla.keycloak.services.model.DaplaUserInfo;
+import no.ssb.dapla.keycloak.utils.Jq;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import org.jboss.logging.Logger;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Pattern;
+
+/**
+ * Implementation that queries the
+ * <a href="https://github.com/statisticsnorway/dapla-api">dapla-api</a>
+ * (GraphQL):
+ */
+@RequiredArgsConstructor
+public class DaplaApi implements ApiService {
+
+    public static final String NAME = "Dapla-api";
+    private static final Logger log = Logger.getLogger(DaplaApi.class);
+    private final OkHttpClient httpClient = new OkHttpClient();
+    private final Config config;
+
+    static final String queryBody = """
+            {
+                "query": "{
+                    user(email: \\"%s\\") {
+                        name
+                        email
+                        section {
+                          name
+                          code
+                        }
+                        isSectionManager
+                        teams {
+                          nodes {
+                            team {
+                              slug
+                              displayName
+                              isManaged
+                              section {
+                                name
+                                code
+                              }
+                            }
+                            groups {
+                              name
+                            }
+                          }
+                        }
+                      }
+                }"
+            }
+            """.replaceAll("[\n\r]", "");
+
+    @Override
+    public DaplaUserInfo getDaplaUserInfo(String userPrincipalName, Pattern groupCategoriesToInclude) {
+        String saToken = config.serviceAccountToken();
+
+        Request request = new Request.Builder()
+                .url(config.apiUrl)
+                .header("Authorization", "Bearer " + saToken)
+                .post(RequestBody.create(queryBody.formatted(userPrincipalName), MediaType.get("application/json; charset=utf-8")))
+                .build();
+
+        JsonNode userInfo = ApiService.fetchUserInfo(request, httpClient, userPrincipalName, log);
+
+        DaplaUser user = Jq.queryOne(
+                        // NB: Order of new object must follow constructor of DaplaUser
+                        ".data.user | { name, email, section_code: .section.code, section_name: .section.name, is_section_manager: .isSectionManager}",
+                        userInfo,
+                        new TypeReference<DaplaUser>() {
+                        }
+                )
+                .orElseThrow();
+
+
+        List<DaplaTeam> teams = Jq.queryOne("[.data.user.teams.nodes[]]", userInfo, new TypeReference<List<ObjectNode>>() {
+                })
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(teamAndGroupNode -> jsonNodeToDaplaTeamWithGroups(teamAndGroupNode, groupCategoriesToInclude))
+                .toList();
+
+        return new DaplaUserInfo(user, teams);
+    }
+
+
+    private static DaplaTeam jsonNodeToDaplaTeamWithGroups(ObjectNode teamAndGroupNode, Pattern categoriesToInclude) {
+        var teamNode = teamAndGroupNode.get("team");
+        String autonomyLevel = teamNode.get("isManaged").booleanValue() ? "MANAGED" : "SELF_MANAGED";
+        var team = new DaplaTeam(
+                teamNode.get("slug").textValue(),
+                teamNode.get("displayName").textValue(),
+                teamNode.get("section").get("code").textValue(),
+                teamNode.get("section").get("name").textValue(),
+                autonomyLevel
+        );
+
+        for (final JsonNode groupNode : teamAndGroupNode.get("groups")) {
+            DaplaGroup group = new DaplaGroup(groupNode.get("name").asText());
+            if (categoriesToInclude == null || categoriesToInclude.matcher(group.name()).matches()) {
+                team.groups().add(group);
+            }
+        }
+
+        return team;
+    }
+
+    public record Config(String apiUrl, String serviceAccountToken) {
+    }
+}

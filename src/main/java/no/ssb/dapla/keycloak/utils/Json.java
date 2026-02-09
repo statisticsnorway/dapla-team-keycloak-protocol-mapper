@@ -3,36 +3,19 @@ package no.ssb.dapla.keycloak.utils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
+import com.fasterxml.jackson.databind.*;
 
 import java.io.IOException;
 import java.util.Map;
 
 public class Json {
 
-    private static final Moshi MOSHI = new Moshi.Builder().build();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     static {
         OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        OBJECT_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
-    }
-
-    /**
-     * Get Moshi adapter for class
-     */
-    public static JsonAdapter<Map<String,Object>> genericMapAdapter() {
-        return MOSHI.adapter(new TypeReference<Map<String, Object>>() {}.getType());
-    }
-
-    public static <T> JsonAdapter<T> adapter(Class<T> type) {
-        return MOSHI.adapter(type).lenient(); // FIXME remove lenient?
+        OBJECT_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
     }
 
     /**
@@ -111,6 +94,14 @@ public class Json {
      */
     public static Map<String, Object> toGenericMap(String json) {
         return toObject(new TypeReference<>() {}, json);
+    }
+
+    /**
+     * Convert POJO to String->Object map
+     */
+    public static <T> Map<String, T> toGenericMap(Object pojo) {
+        return OBJECT_MAPPER.convertValue(pojo, new TypeReference<>() {
+        });
     }
 
     /**
