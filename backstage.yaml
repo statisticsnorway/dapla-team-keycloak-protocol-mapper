@@ -16,6 +16,6 @@ spec:
   system: keycloak
   subcomponentOf: "component:keycloak"
   consumesApis:
-    - dapla-team-api
+    - dapla-api
 
 
