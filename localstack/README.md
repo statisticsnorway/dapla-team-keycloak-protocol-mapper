@@ -41,5 +41,3 @@ docker-compose up --force-recreate
 #### Other tricks:
 
 * Set the `KEYCLOAK_LOG_LEVEL` environment variable in the docker-compose.yml file to `DEBUG` to get more detailed logs.
-* Scripts within in the `localstack/init-scripts` directory are run on Keycloak startup. This can be handy if e.g. you need to
-download other providers or manipulate container internal files.
